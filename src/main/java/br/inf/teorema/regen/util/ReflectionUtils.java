@@ -127,7 +127,7 @@ public class ReflectionUtils {
 	}
     
     public static Field getPKField(Class<?> clazz) {
-		Field[] fields = clazz.getDeclaredFields();
+		List<Field> fields = getAllFields(clazz);
 		for (Field f: fields) {
 			if (ReflectionUtils.isId(f)) {
 				return f;
@@ -144,12 +144,12 @@ public class ReflectionUtils {
 	public static List<Field> getPKFields(Class<?> clazz, Class<? extends Annotation> annotationToFilter) {
 		List<Field> properties = new ArrayList<Field>();
 		
-		Field[] fields = clazz.getDeclaredFields();
+		List<Field> fields = getAllFields(clazz);
 		for (Field f: fields) {
 			if (f.isAnnotationPresent(EmbeddedId.class)) {
 				String pkFieldName = f.getName();
 				Class<?> pkClass = f.getType();
-				Field[] pkFields = pkClass.getDeclaredFields();
+				List<Field> pkFields = getAllFields(pkClass);
 				
 				for (Field pkField: pkFields) {
 					if (annotationToFilter == null || f.isAnnotationPresent(annotationToFilter)) {
@@ -173,12 +173,12 @@ public class ReflectionUtils {
 	public static List<String> getPKFieldsNames(Class<?> clazz, Class<? extends Annotation> annotationToFilter) {
 		List<String> properties = new ArrayList<String>();
 		
-		Field[] fields = clazz.getDeclaredFields();
+		List<Field> fields = getAllFields(clazz);
 		for (Field f: fields) {
 			if (f.isAnnotationPresent(EmbeddedId.class)) {
 				String pkFieldName = f.getName();
 				Class<?> pkClass = f.getType();
-				Field[] pkFields = pkClass.getDeclaredFields();
+				List<Field> pkFields = getAllFields(pkClass);
 				
 				for (Field pkField: pkFields) {
 					if (annotationToFilter == null || f.isAnnotationPresent(annotationToFilter)) {
@@ -580,7 +580,7 @@ public class ReflectionUtils {
 	
 	public static Object getPK(Object entity) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 		Class<?> clazz = entity.getClass();		
-		Field[] fields = clazz.getDeclaredFields();
+		List<Field> fields = getAllFields(clazz);
 		
 		for (Field f: fields) {
 			if (f.isAnnotationPresent(Id.class) || f.isAnnotationPresent(EmbeddedId.class)) {
