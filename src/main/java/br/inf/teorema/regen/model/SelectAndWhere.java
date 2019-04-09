@@ -8,7 +8,7 @@ import java.util.List;
 public class SelectAndWhere {
 
     private List<String> select;
-    private List<Condition> where;
+    private Condition where;
 
     public List<String> getSelect() {
         if (select == null) {
@@ -22,15 +22,11 @@ public class SelectAndWhere {
         this.select = select;
     }
 
-    public List<Condition> getWhere() {
-        if (where == null) {
-            where = new ArrayList<>();
-        }
-
+    public Condition getWhere() {
         return where;
     }
 
-    public void setWhere(List<Condition> where) {
+    public void setWhere(Condition where) {
         this.where = where;
     }
 }
