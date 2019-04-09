@@ -3,12 +3,15 @@ package br.inf.teorema.regen.model;
 import br.inf.teorema.regen.constants.ConditionalOperator;
 import br.inf.teorema.regen.constants.LogicalOperator;
 
+import java.util.List;
+
 public class Condition {
 
 	private String field;
 	private LogicalOperator logicalOperator = LogicalOperator.AND;
 	private ConditionalOperator conditionalOperator = ConditionalOperator.EQUALS;
 	private Object value;
+	private List<Condition> conditions;
 	
 	public String getField() {
 		return field;
@@ -33,6 +36,14 @@ public class Condition {
 	}
 	public void setValue(Object value) {
 		this.value = value;
+	}
+
+	public List<Condition> getConditions() {
+		return conditions;
+	}
+
+	public void setConditions(List<Condition> conditions) {
+		this.conditions = conditions;
 	}
 	
 }
