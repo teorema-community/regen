@@ -2,11 +2,7 @@ package br.inf.teorema.regen.specification;
 
 import java.lang.reflect.Field;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -50,11 +46,15 @@ public class GenericSpecification<T> implements Specification<T> {
 			Condition condition, LogicalOperator logicalOperator, List<Predicate> predicates, boolean last, Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
 	) throws NoSuchFieldException, ParseException {
 		if (condition.getConditions() != null) {
+			List<Predicate> tempPredicates = new ArrayList<>();
+
 			int i = 0;
 			for (Condition subCondition : condition.getConditions()) {
-				predicates = addCondition(subCondition, condition.getLogicalOperator(), predicates, i >= condition.getConditions().size() - 1, root, query, criteriaBuilder);
+				tempPredicates = addCondition(subCondition, condition.getLogicalOperator(), tempPredicates, i >= condition.getConditions().size() - 1, root, query, criteriaBuilder);
 				i++;
 			}
+
+			predicates.addAll(tempPredicates);
 		}
 
 		if (logicalOperator != null
