@@ -13,6 +13,15 @@ public class Condition {
 	private Object value;
 	private List<Condition> conditions;
 	
+	public Condition() {}
+	
+	public Condition(String field, ConditionalOperator conditionalOperator, Object value) {
+		super();
+		this.field = field;
+		this.conditionalOperator = conditionalOperator;
+		this.value = value;
+	}
+
 	public String getField() {
 		return field;
 	}
