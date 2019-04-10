@@ -1,6 +1,7 @@
 package br.inf.teorema.regen.specification;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.*;
 
@@ -12,6 +13,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import br.inf.teorema.regen.constants.LogicalOperator;
+import br.inf.teorema.regen.util.ObjectUtils;
 import org.springframework.data.jpa.domain.Specification;
 
 import br.inf.teorema.regen.model.Condition;
@@ -35,7 +37,7 @@ public class GenericSpecification<T> implements Specification<T> {
 	public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
 		try {
 			return addCondition(this.condition, null, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
-		} catch (NoSuchFieldException | ParseException e) {
+		} catch (NoSuchFieldException | ParseException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
 
@@ -44,7 +46,7 @@ public class GenericSpecification<T> implements Specification<T> {
 
 	private List<Predicate> addCondition(
 			Condition condition, LogicalOperator logicalOperator, List<Predicate> predicates, boolean last, Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
-	) throws NoSuchFieldException, ParseException {
+	) throws NoSuchFieldException, ParseException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
 		if (condition.getConditions() != null) {
 			List<Predicate> tempPredicates = new ArrayList<>();
 
@@ -86,6 +88,10 @@ public class GenericSpecification<T> implements Specification<T> {
 			} else {
 				fieldType = fields.get(0).getType();
 				fieldName = fields.get(0).getName();
+			}
+
+			if (fieldType.isEnum()) {
+				value = fieldType.getDeclaredMethod("valueOf", String.class).invoke(null, value);
 			}
 
 			Expression expression = join != null ? join.get(fieldName) : root.get(fieldName);
