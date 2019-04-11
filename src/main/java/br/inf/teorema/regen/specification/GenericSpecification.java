@@ -89,8 +89,8 @@ public class GenericSpecification<T> implements Specification<T> {
 				fieldName = fields.get(0).getName();
 			}
 
-			if (fieldType.isEnum()) {
-				value = fieldType.getDeclaredMethod("valueOf", String.class).invoke(null, value);
+			if (fieldType.isEnum() && !(value instanceof Enum<?>)) {
+				value = fieldType.getDeclaredMethod("valueOf", String.class).invoke(null, value.toString());
 			}
 
 			@SuppressWarnings("rawtypes")
