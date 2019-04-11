@@ -13,7 +13,6 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import br.inf.teorema.regen.constants.LogicalOperator;
-import br.inf.teorema.regen.util.ObjectUtils;
 import org.springframework.data.jpa.domain.Specification;
 
 import br.inf.teorema.regen.model.Condition;
@@ -32,7 +31,6 @@ public class GenericSpecification<T> implements Specification<T> {
 		this.clazz = clazz;
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Override
 	public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
 		try {
@@ -44,6 +42,7 @@ public class GenericSpecification<T> implements Specification<T> {
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
 	private List<Predicate> addCondition(
 			Condition condition, LogicalOperator logicalOperator, List<Predicate> predicates, boolean last, Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
 	) throws NoSuchFieldException, ParseException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
@@ -94,6 +93,7 @@ public class GenericSpecification<T> implements Specification<T> {
 				value = fieldType.getDeclaredMethod("valueOf", String.class).invoke(null, value);
 			}
 
+			@SuppressWarnings("rawtypes")
 			Expression expression = join != null ? join.get(fieldName) : root.get(fieldName);
 
 			switch (condition.getConditionalOperator()) {
