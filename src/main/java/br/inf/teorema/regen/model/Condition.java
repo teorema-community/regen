@@ -79,4 +79,8 @@ public class Condition {
 		this.addCondition(new Condition(field, conditionalOperator, value));
 	}
 	
+	public void addCondition(String field, Object value) {
+		this.addCondition(new Condition(field, value));
+	}
+	
 }
