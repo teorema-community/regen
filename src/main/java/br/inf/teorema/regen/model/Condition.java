@@ -23,6 +23,12 @@ public class Condition {
 		this.value = value;
 	}
 
+	public Condition(String field, Object value) {
+		super();
+		this.field = field;
+		this.value = value;
+	}
+
 	public Condition(LogicalOperator logicalOperator) {
 		super();
 		this.logicalOperator = logicalOperator;
