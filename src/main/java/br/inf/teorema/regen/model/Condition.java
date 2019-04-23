@@ -4,12 +4,14 @@ import br.inf.teorema.regen.constants.ConditionalOperator;
 import br.inf.teorema.regen.constants.LogicalOperator;
 
 import java.util.ArrayList;
+import javax.persistence.criteria.JoinType;
 import java.util.List;
 
 public class Condition {
 
-	private String field;
 	private LogicalOperator logicalOperator = LogicalOperator.AND;
+	private String field;
+	private JoinType joinType = JoinType.INNER;
 	private ConditionalOperator conditionalOperator = ConditionalOperator.EQUALS;
 	private Object value;
 	private List<Condition> conditions;
@@ -34,18 +36,33 @@ public class Condition {
 		this.logicalOperator = logicalOperator;
 	}
 
-	public String getField() {
-		return field;
-	}
-	public void setField(String field) {
-		this.field = field;
-	}
+
 	public LogicalOperator getLogicalOperator() {
 		return logicalOperator;
 	}
 	public void setLogicalOperator(LogicalOperator logicalOperator) {
 		this.logicalOperator = logicalOperator;
 	}
+
+	public String getField() {
+		return field;
+	}
+	public void setField(String field) {
+		this.field = field;
+	}
+
+	public JoinType getJoinType() {
+		if (joinType == null) {
+			joinType = JoinType.INNER;
+		}
+
+		return joinType;
+	}
+
+	public void setJoinType(JoinType joinType) {
+		this.joinType = joinType;
+	}
+
 	public ConditionalOperator getConditionalOperator() {
 		return conditionalOperator;
 	}
