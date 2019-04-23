@@ -68,9 +68,9 @@ public class GenericSpecification<T> implements Specification<T> {
 				int j = 0;
 				for (Field f : fields) {
 					if (j == 0) {
-						join = root.join(f.getName());
+						join = root.join(f.getName(), condition.getJoinType());
 					} else if (j < fields.size() - 1) {
-						join = join.join(f.getName());
+						join = join.join(f.getName(), condition.getJoinType());
 					} else {
 						fieldType = f.getType();
 						fieldName = f.getName();

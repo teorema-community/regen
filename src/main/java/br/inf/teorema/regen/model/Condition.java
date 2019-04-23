@@ -52,6 +52,10 @@ public class Condition {
 	}
 
 	public JoinType getJoinType() {
+		if (joinType == null) {
+			joinType = JoinType.INNER;
+		}
+
 		return joinType;
 	}
 
