@@ -1,23 +1,17 @@
 package br.inf.teorema.regen.specification;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.text.ParseException;
-import java.util.*;
-
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-
 import br.inf.teorema.regen.constants.LogicalOperator;
 import org.springframework.data.jpa.domain.Specification;
 
 import br.inf.teorema.regen.model.Condition;
 import br.inf.teorema.regen.util.DateUtils;
 import br.inf.teorema.regen.util.ReflectionUtils;
+
+import javax.persistence.criteria.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.text.ParseException;
+import java.util.*;
 
 @SuppressWarnings("serial")
 public class GenericSpecification<T> implements Specification<T> {
@@ -244,5 +238,5 @@ public class GenericSpecification<T> implements Specification<T> {
 	public void setClazz(Class<?> clazz) {
 		this.clazz = clazz;
 	}
-	
+
 }
