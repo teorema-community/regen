@@ -14,15 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -89,7 +81,10 @@ public class ReflectionUtils {
 	}
     
     public static Class<?> getFieldEntityOrType(Field field) {
-		if (field.isAnnotationPresent(OneToMany.class) && isOrExtendsIterable(field.getType())) {
+		if ((
+			field.isAnnotationPresent(OneToMany.class)
+			|| field.isAnnotationPresent(ManyToMany.class)
+		) && isOrExtendsIterable(field.getType())) {
 			ParameterizedType listType = (ParameterizedType) field.getGenericType();
 			Class<?> listClass = (Class<?>) listType.getActualTypeArguments()[0];
 			return listClass;
