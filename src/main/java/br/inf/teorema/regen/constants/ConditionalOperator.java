@@ -8,6 +8,8 @@ public enum ConditionalOperator {
 	GREATER_THAN_OR_EQUAL_TO, 
 	LESS_THAN_OR_EQUAL_TO,
 	LIKE,
+	LIKE_START,
+	LIKE_END,
 	BETWEEN,
 	IN
 }

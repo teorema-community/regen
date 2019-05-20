@@ -154,6 +154,12 @@ public class GenericSpecification<T> implements Specification<T> {
 				case LIKE:
 					predicate = criteriaBuilder.like(expression, "%" + value.toString() + "%");
 					break;
+				case LIKE_START:
+					predicate = criteriaBuilder.like(expression, value.toString() + "%");
+					break;
+				case LIKE_END:
+					predicate = criteriaBuilder.like(expression, "%" + value.toString());
+					break;
 				case BETWEEN:
 					List<Object> values = (List<Object>) value;
 
