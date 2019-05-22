@@ -1,5 +1,6 @@
 package br.inf.teorema.regen.specification;
 
+import br.inf.teorema.regen.constants.ConditionalOperator;
 import br.inf.teorema.regen.constants.LogicalOperator;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -55,8 +56,15 @@ public class GenericSpecification<T> implements Specification<T> {
 		if (logicalOperator != null
 				&& condition.getField() != null
 				&& condition.getConditionalOperator() != null
-				&& condition.getValue() != null
-				&& !condition.getValue().toString().isEmpty()) {
+				&& (
+					(
+						condition.getValue() != null
+						&& !condition.getValue().toString().isEmpty()
+					)
+					|| condition.getConditionalOperator().equals(ConditionalOperator.IS_NOT_NULL)
+					|| condition.getConditionalOperator().equals(ConditionalOperator.IS_NULL)
+				)
+		) {
 			Object value = condition.getValue();
 			Predicate predicate = null;
 			Join<?, ?> join = null;
@@ -83,7 +91,7 @@ public class GenericSpecification<T> implements Specification<T> {
 				fieldName = fields.get(0).getName();
 			}
 
-			if (fieldType.isEnum() && !(value instanceof Enum<?>)) {
+			if (fieldType.isEnum() && value != null && !(value instanceof Enum<?>)) {
 				value = fieldType.getDeclaredMethod("valueOf", String.class).invoke(null, value.toString());
 			}
 
@@ -198,6 +206,14 @@ public class GenericSpecification<T> implements Specification<T> {
 
 					valueList = newList;
 					predicate = expression.in(valueList);
+
+					break;
+				case IS_NULL:
+					predicate = criteriaBuilder.isNull(expression);
+
+					break;
+				case IS_NOT_NULL:
+					predicate = criteriaBuilder.isNotNull(expression);
 
 					break;
 				default:

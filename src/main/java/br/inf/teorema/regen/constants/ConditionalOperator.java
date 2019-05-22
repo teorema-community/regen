@@ -11,5 +11,7 @@ public enum ConditionalOperator {
 	LIKE_START,
 	LIKE_END,
 	BETWEEN,
-	IN
+	IN,
+	IS_NULL,
+	IS_NOT_NULL
 }
