@@ -8,7 +8,7 @@ public class FieldJoin {
 
     private String joinSourceField;
     private String joinField;
-    private JoinType type;
+    private JoinType type = JoinType.INNER;
     private ConditionalOperator conditionalOperator = ConditionalOperator.EQUALS;
     private String onSourceConditionField;
     private String onConditionField;

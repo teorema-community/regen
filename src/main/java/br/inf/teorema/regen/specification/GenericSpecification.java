@@ -419,10 +419,10 @@ public class GenericSpecification<T> implements Specification<T> {
 
 				if (!condition.getFieldJoins().isEmpty()) {
 					for (FieldJoin fj : condition.getFieldJoins()) {
-						if (f.getName().equals(fieldJoin.getJoinField()) && (
+						if (f.getName().equals(fj.getJoinField()) && (
 								j == 0
-								|| fieldJoin.getJoinSourceField() == null
-								|| fields.get(j - 1).getName().equals(fieldJoin.getJoinSourceField())
+								|| fj.getJoinSourceField() == null
+								|| fields.get(j - 1).getName().equals(fj.getJoinSourceField())
 						)
 						) {
 							fieldJoin = fj;
@@ -444,16 +444,28 @@ public class GenericSpecification<T> implements Specification<T> {
 					fieldName = f.getName();
 				}
 
-				JoinedField joinedField = new JoinedField(f, join);
+				if (j < fields.size() - 1) {
+					JoinedField joinedField = new JoinedField(f, join);
 
-				if (j > 0) {
-					joinedField.setSourceField(fields.get(j - 1));
+					if (j > 0) {
+						joinedField.setSourceField(fields.get(j - 1));
+					}
+
+					joinedFields.add(joinedField);
 				}
-
-				joinedFields.add(joinedField);
 
 				if (fieldJoin != null && fieldJoin.getJoinField() != null) {
 					JoinedField foundJoinedField = null;
+
+					for (JoinedField jf : joinedFields) {
+						if (jf.getField().getName().equals(fieldJoin.getJoinField()) && (
+							(jf.getSourceField() == null && fieldJoin.getJoinSourceField() == null)
+							|| (jf.getSourceField() != null && jf.getSourceField().getName().equals(fieldJoin.getJoinSourceField()))
+						)) {
+							foundJoinedField = jf;
+							break;
+						}
+					}
 
 					if (foundJoinedField != null) {
 						FieldExpression leftHandFieldExpression = getFieldExpressionByCondition(
