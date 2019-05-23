@@ -3,8 +3,8 @@ package br.inf.teorema.regen.model;
 import br.inf.teorema.regen.constants.ConditionalOperator;
 import br.inf.teorema.regen.constants.LogicalOperator;
 
-import java.util.ArrayList;
 import javax.persistence.criteria.JoinType;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Condition {

@@ -2,14 +2,12 @@ package br.inf.teorema.regen.specification;
 
 import br.inf.teorema.regen.constants.ConditionalOperator;
 import br.inf.teorema.regen.constants.LogicalOperator;
+import br.inf.teorema.regen.model.Condition;
 import br.inf.teorema.regen.model.FieldExpression;
 import br.inf.teorema.regen.model.FieldJoin;
-import br.inf.teorema.regen.model.JoinedField;
-import org.springframework.data.jpa.domain.Specification;
-
-import br.inf.teorema.regen.model.Condition;
 import br.inf.teorema.regen.util.DateUtils;
 import br.inf.teorema.regen.util.ReflectionUtils;
+import org.springframework.data.jpa.domain.Specification;
 
 import javax.persistence.criteria.*;
 import java.lang.reflect.Field;
@@ -215,8 +213,6 @@ public class GenericSpecification<T> implements Specification<T> {
 		List<Field> fields = ReflectionUtils.getFields(condition.getField(), clazz);
 
 		if (fields.size() > 1) {
-			List<JoinedField> joinedFields = new ArrayList<>();
-
 			int j = 0;
 			for (Field f : fields) {
 				JoinType joinType = condition.getJoinType();
@@ -247,16 +243,6 @@ public class GenericSpecification<T> implements Specification<T> {
 				} else {
 					fieldType = f.getType();
 					fieldName = f.getName();
-				}
-
-				if (j < fields.size() - 1) {
-					JoinedField joinedField = new JoinedField(f, join);
-
-					if (j > 0) {
-						joinedField.setSourceField(fields.get(j - 1));
-					}
-
-					joinedFields.add(joinedField);
 				}
 
 				j++;

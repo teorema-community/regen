@@ -1,7 +1,5 @@
 package br.inf.teorema.regen.model;
 
-import br.inf.teorema.regen.constants.ConditionalOperator;
-
 import javax.persistence.criteria.JoinType;
 
 public class FieldJoin {

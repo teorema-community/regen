@@ -1,9 +1,9 @@
 package br.inf.teorema.regen.util;
 
-import java.text.Normalizer;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.text.Normalizer;
 
 public class StringUtils {
 
