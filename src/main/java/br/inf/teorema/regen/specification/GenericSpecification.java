@@ -2,6 +2,7 @@ package br.inf.teorema.regen.specification;
 
 import br.inf.teorema.regen.constants.ConditionalOperator;
 import br.inf.teorema.regen.constants.LogicalOperator;
+import br.inf.teorema.regen.model.FieldJoin;
 import org.springframework.data.jpa.domain.Specification;
 
 import br.inf.teorema.regen.model.Condition;
@@ -75,6 +76,16 @@ public class GenericSpecification<T> implements Specification<T> {
 			if (fields.size() > 1) {
 				int j = 0;
 				for (Field f : fields) {
+					JoinType joinType = condition.getJoinType();
+
+					Optional<FieldJoin> fieldJoinOptional = condition.getFieldJoins().stream()
+							.filter(fieldJoin -> f.getName().equals(fieldJoin.getField()))
+							.findFirst();
+
+					if (fieldJoinOptional.isPresent()) {
+						joinType = fieldJoinOptional.get().getType();
+					}
+
 					if (j == 0) {
 						join = root.join(f.getName(), condition.getJoinType());
 					} else if (j < fields.size() - 1) {
@@ -82,6 +93,11 @@ public class GenericSpecification<T> implements Specification<T> {
 					} else {
 						fieldType = f.getType();
 						fieldName = f.getName();
+						break;
+					}
+
+					if (fieldJoinOptional.isPresent()) {
+						join = setJoinCustomOn(join, fieldJoinOptional.get().getOn(), root, query, criteriaBuilder);
 					}
 
 					j++;
@@ -243,6 +259,18 @@ public class GenericSpecification<T> implements Specification<T> {
 			default:
 				return null;
 		}
+	}
+
+	private Join<?,?> setJoinCustomOn(Join<?,?> join, Condition on, Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, ParseException, NoSuchFieldException {
+		if (on != null) {
+			List<Predicate> predicates = addCondition(condition, null, new ArrayList<Predicate>(), true, root, query, criteriaBuilder);
+
+			if (predicates != null && !predicates.isEmpty()) {
+				join.on(predicates.toArray(new Predicate[predicates.size()]));
+			}
+		}
+
+		return join;
 	}
 
 	public Condition getCondition() {
