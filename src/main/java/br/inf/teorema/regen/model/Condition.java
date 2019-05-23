@@ -15,8 +15,8 @@ public class Condition {
 	private List<FieldJoin> fieldJoins;
 	private ConditionalOperator conditionalOperator = ConditionalOperator.EQUALS;
 	private Object value;
+	private String fieldValue;
 	private List<Condition> conditions;
-	private Boolean isValueAField;
 	
 	public Condition() {}
 	
@@ -89,24 +89,20 @@ public class Condition {
 		this.value = value;
 	}
 
+	public String getFieldValue() {
+		return fieldValue;
+	}
+
+	public void setFieldValue(String fieldValue) {
+		this.fieldValue = fieldValue;
+	}
+
 	public List<Condition> getConditions() {
 		if (conditions == null) {
 			conditions = new ArrayList<Condition>();
 		}
 		
 		return conditions;
-	}
-
-	public Boolean getValueAField() {
-		if (isValueAField == null) {
-			isValueAField = false;
-		}
-
-		return isValueAField;
-	}
-
-	public void setValueAField(Boolean valueAField) {
-		isValueAField = valueAField;
 	}
 
 	public void setConditions(List<Condition> conditions) {

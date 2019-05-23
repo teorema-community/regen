@@ -2,6 +2,7 @@ package br.inf.teorema.regen.specification;
 
 import br.inf.teorema.regen.constants.ConditionalOperator;
 import br.inf.teorema.regen.constants.LogicalOperator;
+import br.inf.teorema.regen.model.FieldExpression;
 import br.inf.teorema.regen.model.FieldJoin;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -62,187 +63,166 @@ public class GenericSpecification<T> implements Specification<T> {
 						condition.getValue() != null
 						&& !condition.getValue().toString().isEmpty()
 					)
+					|| (
+						condition.getFieldValue() != null
+						&& !condition.getFieldValue().toString().isEmpty()
+					)
 					|| condition.getConditionalOperator().equals(ConditionalOperator.IS_NOT_NULL)
 					|| condition.getConditionalOperator().equals(ConditionalOperator.IS_NULL)
 				)
 		) {
+			FieldExpression fieldExpression = getFieldExpressionByCondition(condition, root, query, criteriaBuilder);
 			Object value = condition.getValue();
+
+			if (!fieldExpression.getFieldType().isEnum() && value != null && !(value instanceof Enum<?>)) {
+				value = fieldExpression.getFieldType().getDeclaredMethod("valueOf", String.class).invoke(null, value.toString());
+			}
+
 			Predicate predicate = null;
-			Join<?, ?> join = null;
-			Class<?> fieldType = null;
-			String fieldName = null;
-			List<Field> fields = ReflectionUtils.getFields(condition.getField(), clazz);
-
-			if (fields.size() > 1) {
-				int j = 0;
-				for (Field f : fields) {
-					JoinType joinType = condition.getJoinType();
-
-					FieldJoin fieldJoin = null;
-
-					if (!condition.getFieldJoins().isEmpty()) {
-						for (FieldJoin fj : condition.getFieldJoins()) {
-							if (f.getName().equals(fieldJoin.getField()) && (
-									j == 0
-									|| fieldJoin.getSourceField() == null
-									|| fields.get(j - 1).getName().equals(fieldJoin.getSourceField())
-								)
-							) {
-								fieldJoin = fj;
-								break;
-							}
-						}
-					}
-
-
-					if (fieldJoin != null) {
-						joinType = fieldJoin.getType();
-					}
-
-					if (j == 0) {
-						join = root.join(f.getName(), joinType);
-					} else if (j < fields.size() - 1) {
-						join = join.join(f.getName(), joinType);
-					} else {
-						fieldType = f.getType();
-						fieldName = f.getName();
-						break;
-					}
-
-					if (fieldJoin != null) {
-						join = setJoinCustomOn(join, fieldJoin.getOn(), root, query, criteriaBuilder);
-					}
-
-					j++;
-				}
-			} else {
-				fieldType = fields.get(0).getType();
-				fieldName = fields.get(0).getName();
-			}
-
-			if (fieldType.isEnum() && value != null && !(value instanceof Enum<?>)) {
-				value = fieldType.getDeclaredMethod("valueOf", String.class).invoke(null, value.toString());
-			}
-
-			@SuppressWarnings("rawtypes")
-			Expression expression = join != null ? join.get(fieldName) : root.get(fieldName);
 
 			switch (condition.getConditionalOperator()) {
 				case EQUALS:
-					if (fieldType.equals(Date.class)) {
-						predicate = criteriaBuilder.equal(expression, DateUtils.parseDate(value.toString()));
-					} else if (fieldType.equals(UUID.class)) {
-						predicate = criteriaBuilder.equal(expression, UUID.fromString(value.toString()));
+					if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(Date.class)) {
+						predicate = criteriaBuilder.equal(fieldExpression.getExpression(), DateUtils.parseDate(value.toString()));
+					} else if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(UUID.class)) {
+						predicate = criteriaBuilder.equal(fieldExpression.getExpression(), UUID.fromString(value.toString()));
 					} else {
-						predicate = criteriaBuilder.equal(expression, value);
+						predicate = criteriaBuilder.equal(fieldExpression.getExpression(), value);
 					}
 
 					break;
 				case NOT_EQUALS:
-					if (fieldType.equals(Date.class)) {
-						predicate = criteriaBuilder.notEqual(expression, DateUtils.parseDate(value.toString()));
-					} else if (fieldType.equals(UUID.class)) {
-						predicate = criteriaBuilder.notEqual(expression, UUID.fromString(value.toString()));
+					if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(Date.class)) {
+						predicate = criteriaBuilder.notEqual(fieldExpression.getExpression(), DateUtils.parseDate(value.toString()));
+					} else if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(UUID.class)) {
+						predicate = criteriaBuilder.notEqual(fieldExpression.getExpression(), UUID.fromString(value.toString()));
 					} else {
-						predicate = criteriaBuilder.notEqual(expression, value);
+						predicate = criteriaBuilder.notEqual(fieldExpression.getExpression(), value);
 					}
 
 					break;
 				case GREATER_THAN:
-					if (fieldType.equals(Date.class)) {
-						predicate = criteriaBuilder.greaterThan(expression, DateUtils.parseDate(value.toString()));
-					} else if (fieldType.equals(UUID.class)) {
-						predicate = criteriaBuilder.greaterThan(expression, UUID.fromString(value.toString()));
+					if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(Date.class)) {
+						predicate = criteriaBuilder.greaterThan(fieldExpression.getExpression(), DateUtils.parseDate(value.toString()));
+					} else if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(UUID.class)) {
+						predicate = criteriaBuilder.greaterThan(fieldExpression.getExpression(), UUID.fromString(value.toString()));
 					} else {
-						predicate = criteriaBuilder.greaterThan(expression, value.toString());
+						predicate = criteriaBuilder.greaterThan(fieldExpression.getExpression(), value.toString());
 					}
 
 					break;
 				case GREATER_THAN_OR_EQUAL_TO:
-					if (fieldType.equals(Date.class)) {
-						predicate = criteriaBuilder.greaterThanOrEqualTo(expression, DateUtils.parseDate(value.toString()));
-					} else if (fieldType.equals(UUID.class)) {
-						predicate = criteriaBuilder.greaterThanOrEqualTo(expression, UUID.fromString(value.toString()));
+					if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(Date.class)) {
+						predicate = criteriaBuilder.greaterThanOrEqualTo(fieldExpression.getExpression(), DateUtils.parseDate(value.toString()));
+					} else if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(UUID.class)) {
+						predicate = criteriaBuilder.greaterThanOrEqualTo(fieldExpression.getExpression(), UUID.fromString(value.toString()));
 					} else {
-						predicate = criteriaBuilder.greaterThanOrEqualTo(expression, value.toString());
+						predicate = criteriaBuilder.greaterThanOrEqualTo(fieldExpression.getExpression(), value.toString());
 					}
 
 					break;
 				case LESS_THAN:
-					if (fieldType.equals(Date.class)) {
-						predicate = criteriaBuilder.lessThan(expression, DateUtils.parseDate(value.toString()));
-					} else if (fieldType.equals(UUID.class)) {
-						predicate = criteriaBuilder.lessThan(expression, UUID.fromString(value.toString()));
+					if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(Date.class)) {
+						predicate = criteriaBuilder.lessThan(fieldExpression.getExpression(), DateUtils.parseDate(value.toString()));
+					} else if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(UUID.class)) {
+						predicate = criteriaBuilder.lessThan(fieldExpression.getExpression(), UUID.fromString(value.toString()));
 					} else {
-						predicate = criteriaBuilder.lessThan(expression, value.toString());
+						predicate = criteriaBuilder.lessThan(fieldExpression.getExpression(), value.toString());
 					}
 
 					break;
 				case LESS_THAN_OR_EQUAL_TO:
-					if (fieldType.equals(Date.class)) {
-						predicate = criteriaBuilder.lessThanOrEqualTo(expression, DateUtils.parseDate(value.toString()));
-					} else if (fieldType.equals(UUID.class)) {
-						predicate = criteriaBuilder.lessThanOrEqualTo(expression, UUID.fromString(value.toString()));
+					if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(Date.class)) {
+						predicate = criteriaBuilder.lessThanOrEqualTo(fieldExpression.getExpression(), DateUtils.parseDate(value.toString()));
+					} else if (condition.getFieldValue() == null && fieldExpression.getFieldType().equals(UUID.class)) {
+						predicate = criteriaBuilder.lessThanOrEqualTo(fieldExpression.getExpression(), UUID.fromString(value.toString()));
 					} else {
-						predicate = criteriaBuilder.lessThanOrEqualTo(expression, value.toString());
+						predicate = criteriaBuilder.lessThanOrEqualTo(fieldExpression.getExpression(), value.toString());
 					}
 
 					break;
 				case LIKE:
-					predicate = criteriaBuilder.like(expression, "%" + value.toString() + "%");
+					if (condition.getFieldValue() == null) {
+						predicate = criteriaBuilder.like(fieldExpression.getExpression(), "%" + value.toString() + "%");
+					} else {
+						predicate = criteriaBuilder.like(fieldExpression.getExpression(), (Expression) value);
+					}
+
 					break;
 				case LIKE_START:
-					predicate = criteriaBuilder.like(expression, value.toString() + "%");
+					if (condition.getFieldValue() == null) {
+						predicate = criteriaBuilder.like(fieldExpression.getExpression(), value.toString() + "%");
+					} else {
+						predicate = criteriaBuilder.like(fieldExpression.getExpression(), (Expression) value);
+					}
+
 					break;
 				case LIKE_END:
-					predicate = criteriaBuilder.like(expression, "%" + value.toString());
+					if (condition.getFieldValue() == null) {
+						predicate = criteriaBuilder.like(fieldExpression.getExpression(), "%" + value.toString());
+					} else {
+						predicate = criteriaBuilder.like(fieldExpression.getExpression(), (Expression) value);
+					}
+
 					break;
 				case BETWEEN:
 					List<Object> values = (List<Object>) value;
 
-					if (fieldType.equals(Date.class)) {
-						predicate = criteriaBuilder.between(
-								expression,
-								DateUtils.parseDate(values.get(0).toString()),
-								DateUtils.parseDate(values.get(1).toString())
-						);
-					} else if (fieldType.equals(UUID.class)) {
-						predicate = criteriaBuilder.between(
-								expression,
-								UUID.fromString(values.get(0).toString()),
-								UUID.fromString(values.get(1).toString())
-						);
+					if (condition.getFieldValue() == null) {
+						if (fieldExpression.getFieldType().equals(Date.class)) {
+							predicate = criteriaBuilder.between(
+									fieldExpression.getExpression(),
+									DateUtils.parseDate(values.get(0).toString()),
+									DateUtils.parseDate(values.get(1).toString())
+							);
+						} else if (fieldExpression.getFieldType().equals(UUID.class)) {
+							predicate = criteriaBuilder.between(
+									fieldExpression.getExpression(),
+									UUID.fromString(values.get(0).toString()),
+									UUID.fromString(values.get(1).toString())
+							);
+						} else {
+							predicate = criteriaBuilder.between(fieldExpression.getExpression(), values.get(0).toString(), values.get(1).toString());
+						}
 					} else {
-						predicate = criteriaBuilder.between(expression, values.get(0).toString(), values.get(1).toString());
+						predicate = criteriaBuilder.between(fieldExpression.getExpression(), (Expression) values.get(0), (Expression) values.get(1));
 					}
 
 					break;
 				case IN:
-					List<Object> valueList = Arrays.asList(value.toString().split(","));
 					List<Object> newList = new ArrayList<Object>();
 
-					for (Object v : valueList) {
-						Object newValue = v.toString().trim();
+					if (condition.getFieldValue() == null) {
+						List<Object> valueList = Arrays.asList(value.toString().split(","));
 
-						if (fieldType.equals(Date.class)) {
-							newValue = DateUtils.parseDate(newValue.toString());
-						} else if (fieldType.equals(UUID.class)) {
-							newValue = UUID.fromString(newValue.toString());
+						for (Object v : valueList) {
+							Object newValue = v.toString().trim();
+
+							if (fieldExpression.getFieldType().equals(Date.class)) {
+								newValue = DateUtils.parseDate(newValue.toString());
+							} else if (fieldExpression.getFieldType().equals(UUID.class)) {
+								newValue = UUID.fromString(newValue.toString());
+							}
+
+							newList.add(newValue);
 						}
-
-						newList.add(newValue);
+					} else {
+						try {
+							newList = (List) value;
+						} catch (ClassCastException e) {
+							newList.add(value);
+						}
 					}
 
-					valueList = newList;
-					predicate = expression.in(valueList);
+					predicate = fieldExpression.getExpression().in(newList);
 
 					break;
 				case IS_NULL:
-					predicate = criteriaBuilder.isNull(expression);
+					predicate = criteriaBuilder.isNull(fieldExpression.getExpression());
 
 					break;
 				case IS_NOT_NULL:
-					predicate = criteriaBuilder.isNotNull(expression);
+					predicate = criteriaBuilder.isNotNull(fieldExpression.getExpression());
 
 					break;
 				default:
@@ -275,8 +255,10 @@ public class GenericSpecification<T> implements Specification<T> {
 	}
 
 	private Join<?,?> setJoinCustomOn(Join<?,?> join, Condition on, Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, ParseException, NoSuchFieldException {
-		if (on != null) {
-			List<Predicate> predicates = addCondition(condition, null, new ArrayList<Predicate>(), true, root, query, criteriaBuilder);
+		if (on != null && on.getFieldValue() != null) {
+			on.setValue(getFieldExpressionByCondition(on, root, query, criteriaBuilder).getExpression());
+
+			List<Predicate> predicates = addCondition(on, null, new ArrayList<Predicate>(), true, root, query, criteriaBuilder);
 
 			if (!predicates.isEmpty()) {
 				join.on(predicates.toArray(new Predicate[predicates.size()]));
@@ -284,6 +266,64 @@ public class GenericSpecification<T> implements Specification<T> {
 		}
 
 		return join;
+	}
+
+	private FieldExpression getFieldExpressionByCondition(
+		Condition condition, Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
+	) throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, ParseException, InvocationTargetException {
+		Join<?, ?> join = null;
+		Class<?> fieldType = null;
+		String fieldName = null;
+		List<Field> fields = ReflectionUtils.getFields(condition.getField(), clazz);
+
+		if (fields.size() > 1) {
+			int j = 0;
+			for (Field f : fields) {
+				JoinType joinType = condition.getJoinType();
+				FieldJoin fieldJoin = null;
+
+				if (!condition.getFieldJoins().isEmpty()) {
+					for (FieldJoin fj : condition.getFieldJoins()) {
+						if (f.getName().equals(fieldJoin.getField()) && (
+								j == 0
+										|| fieldJoin.getSourceField() == null
+										|| fields.get(j - 1).getName().equals(fieldJoin.getSourceField())
+						)
+						) {
+							fieldJoin = fj;
+							break;
+						}
+					}
+				}
+
+				if (fieldJoin != null) {
+					joinType = fieldJoin.getType();
+				}
+
+				if (j == 0) {
+					join = root.join(f.getName(), joinType);
+				} else if (j < fields.size() - 1) {
+					join = join.join(f.getName(), joinType);
+				} else {
+					fieldType = f.getType();
+					fieldName = f.getName();
+					break;
+				}
+
+				if (fieldJoin != null) {
+					join = setJoinCustomOn(join, fieldJoin.getOn(), root, query, criteriaBuilder);
+				}
+
+				j++;
+			}
+		} else {
+			fieldType = fields.get(0).getType();
+			fieldName = fields.get(0).getName();
+		}
+
+		Expression expression = join != null ? join.get(fieldName) : root.get(fieldName);
+
+		return new FieldExpression(expression, fieldType, fieldName);
 	}
 
 	public Condition getCondition() {
