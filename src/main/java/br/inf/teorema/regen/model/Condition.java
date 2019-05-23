@@ -3,8 +3,8 @@ package br.inf.teorema.regen.model;
 import br.inf.teorema.regen.constants.ConditionalOperator;
 import br.inf.teorema.regen.constants.LogicalOperator;
 
-import java.util.ArrayList;
 import javax.persistence.criteria.JoinType;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Condition {
@@ -12,12 +12,17 @@ public class Condition {
 	private LogicalOperator logicalOperator = LogicalOperator.AND;
 	private String field;
 	private JoinType joinType = JoinType.INNER;
+	private List<FieldJoin> fieldJoins;
 	private ConditionalOperator conditionalOperator = ConditionalOperator.EQUALS;
 	private Object value;
 	private List<Condition> conditions;
 	
 	public Condition() {}
-	
+
+	public Condition(String field) {
+		this.field = field;
+	}
+
 	public Condition(String field, ConditionalOperator conditionalOperator, Object value) {
 		super();
 		this.field = field;
@@ -35,7 +40,6 @@ public class Condition {
 		super();
 		this.logicalOperator = logicalOperator;
 	}
-
 
 	public LogicalOperator getLogicalOperator() {
 		return logicalOperator;
@@ -57,6 +61,18 @@ public class Condition {
 		}
 
 		return joinType;
+	}
+
+	public List<FieldJoin> getFieldJoins() {
+		if (fieldJoins == null) {
+			fieldJoins = new ArrayList<>();
+		}
+
+		return fieldJoins;
+	}
+
+	public void setFieldJoins(List<FieldJoin> fieldJoins) {
+		this.fieldJoins = fieldJoins;
 	}
 
 	public void setJoinType(JoinType joinType) {
@@ -98,6 +114,26 @@ public class Condition {
 	
 	public void addCondition(String field, Object value) {
 		this.addCondition(new Condition(field, value));
+	}
+
+	public void addFieldJoin(FieldJoin fieldJoin) {
+		this.getFieldJoins().add(fieldJoin);
+	}
+
+	public void addFieldJoin(String field) {
+		this.addFieldJoin(new FieldJoin(field));
+	}
+
+	public void addFieldJoin(String field, JoinType type) {
+		this.addFieldJoin(new FieldJoin(field, type));
+	}
+
+	public void addFieldJoin(String sourceField, String field) {
+		this.addFieldJoin(new FieldJoin(sourceField, field));
+	}
+
+	public void addFieldJoin(String sourceField, String field, JoinType type) {
+		this.addFieldJoin(new FieldJoin(sourceField, field, type));
 	}
 	
 }

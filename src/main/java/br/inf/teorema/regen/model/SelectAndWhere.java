@@ -1,7 +1,5 @@
 package br.inf.teorema.regen.model;
 
-import br.inf.teorema.regen.model.Condition;
-
 import java.util.ArrayList;
 import java.util.List;
 

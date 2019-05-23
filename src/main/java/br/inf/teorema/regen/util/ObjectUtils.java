@@ -1,16 +1,10 @@
 package br.inf.teorema.regen.util;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.lang.reflect.Field;
+import java.util.*;
 
 public class ObjectUtils {
 
