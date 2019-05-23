@@ -12,6 +12,7 @@ public class Condition {
 	private LogicalOperator logicalOperator = LogicalOperator.AND;
 	private String field;
 	private JoinType joinType = JoinType.INNER;
+	private List<FieldJoin> fieldJoins;
 	private ConditionalOperator conditionalOperator = ConditionalOperator.EQUALS;
 	private Object value;
 	private List<Condition> conditions;
@@ -36,7 +37,6 @@ public class Condition {
 		this.logicalOperator = logicalOperator;
 	}
 
-
 	public LogicalOperator getLogicalOperator() {
 		return logicalOperator;
 	}
@@ -57,6 +57,18 @@ public class Condition {
 		}
 
 		return joinType;
+	}
+
+	public List<FieldJoin> getFieldJoins() {
+		if (fieldJoins == null) {
+			fieldJoins = new ArrayList<>();
+		}
+
+		return fieldJoins;
+	}
+
+	public void setFieldJoins(List<FieldJoin> fieldJoins) {
+		this.fieldJoins = fieldJoins;
 	}
 
 	public void setJoinType(JoinType joinType) {
@@ -98,6 +110,18 @@ public class Condition {
 	
 	public void addCondition(String field, Object value) {
 		this.addCondition(new Condition(field, value));
+	}
+
+	public void addFieldJoin(FieldJoin fieldJoin) {
+		this.getFieldJoins().add(fieldJoin);
+	}
+
+	public void addFieldJoin(String field, JoinType joinType, Condition on) {
+		this.addFieldJoin(new FieldJoin(field, joinType, on));
+	}
+
+	public void addFieldJoin(String field, JoinType joinType) {
+		this.addFieldJoin(new FieldJoin(field, joinType));
 	}
 	
 }
