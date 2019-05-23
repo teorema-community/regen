@@ -19,7 +19,11 @@ public class Condition {
 	private List<Condition> conditions;
 	
 	public Condition() {}
-	
+
+	public Condition(String field) {
+		this.field = field;
+	}
+
 	public Condition(String field, ConditionalOperator conditionalOperator, Object value) {
 		super();
 		this.field = field;
@@ -125,20 +129,20 @@ public class Condition {
 		this.getFieldJoins().add(fieldJoin);
 	}
 
-	public void addFieldJoin(String field, JoinType joinType, Condition on) {
-		this.addFieldJoin(new FieldJoin(field, joinType, on));
+	public void addFieldJoin(String field, String onSourceConditionField, String onConditionField) {
+		this.addFieldJoin(new FieldJoin(field, onSourceConditionField, onConditionField));
 	}
 
-	public void addFieldJoin(String field, JoinType joinType) {
-		this.addFieldJoin(new FieldJoin(field, joinType));
+	public void addFieldJoin(String joinField, JoinType type, String onSourceConditionField, String onConditionField) {
+		this.addFieldJoin(new FieldJoin(joinField, type, onSourceConditionField, onConditionField));
 	}
 
-	public void addFieldJoin(String sourceField, String field, JoinType joinType, Condition on) {
-		this.addFieldJoin(new FieldJoin(sourceField, field, joinType, on));
+	public void addFieldJoin(String joinSourceField, String joinField, String onSourceConditionField, String onConditionField) {
+		this.addFieldJoin(new FieldJoin(joinSourceField, joinField, onSourceConditionField, onConditionField));
 	}
 
-	public void addFieldJoin(String sourceField, String field, JoinType joinType) {
-		this.addFieldJoin(new FieldJoin(sourceField, field, joinType));
+	public void addFieldJoin(String joinSourceField, String joinField, JoinType type, String onSourceConditionField, String onConditionField) {
+		this.addFieldJoin(new FieldJoin(joinSourceField, joinField, type, onSourceConditionField, onConditionField));
 	}
 	
 }
