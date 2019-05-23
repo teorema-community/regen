@@ -6,57 +6,46 @@ import javax.persistence.criteria.JoinType;
 
 public class FieldJoin {
 
-    private String joinSourceField;
-    private String joinField;
+    private String sourceField;
+    private String field;
     private JoinType type = JoinType.INNER;
-    private ConditionalOperator conditionalOperator = ConditionalOperator.EQUALS;
-    private String onSourceConditionField;
-    private String onConditionField;
 
     public FieldJoin() {}
 
-    public FieldJoin(String joinField, String onSourceConditionField, String onConditionField) {
-        this.joinField = joinField;
-        this.onSourceConditionField = onSourceConditionField;
-        this.onConditionField = onConditionField;
+    public FieldJoin(String field) {
+        this.field = field;
     }
 
-    public FieldJoin(String joinField, JoinType type, String onSourceConditionField, String onConditionField) {
-        this.joinField = joinField;
+    public FieldJoin(String field, JoinType type) {
+        this.field = field;
         this.type = type;
-        this.onSourceConditionField = onSourceConditionField;
-        this.onConditionField = onConditionField;
     }
 
-    public FieldJoin(String joinSourceField, String joinField, String onSourceConditionField, String onConditionField) {
-        this.joinSourceField = joinSourceField;
-        this.joinField = joinField;
-        this.onSourceConditionField = onSourceConditionField;
-        this.onConditionField = onConditionField;
+    public FieldJoin(String sourceField, String field) {
+        this.sourceField = sourceField;
+        this.field = field;
     }
 
-    public FieldJoin(String joinSourceField, String joinField, JoinType type, String onSourceConditionField, String onConditionField) {
-        this.joinSourceField = joinSourceField;
-        this.joinField = joinField;
+    public FieldJoin(String sourceField, String field, JoinType type) {
+        this.sourceField = sourceField;
+        this.field = field;
         this.type = type;
-        this.onSourceConditionField = onSourceConditionField;
-        this.onConditionField = onConditionField;
     }
 
-    public String getJoinSourceField() {
-        return joinSourceField;
+    public String getSourceField() {
+        return sourceField;
     }
 
-    public void setJoinSourceField(String joinSourceField) {
-        this.joinSourceField = joinSourceField;
+    public void setSourceField(String sourceField) {
+        this.sourceField = sourceField;
     }
 
-    public String getJoinField() {
-        return joinField;
+    public String getField() {
+        return field;
     }
 
-    public void setJoinField(String joinField) {
-        this.joinField = joinField;
+    public void setField(String field) {
+        this.field = field;
     }
 
     public JoinType getType() {
@@ -65,29 +54,5 @@ public class FieldJoin {
 
     public void setType(JoinType type) {
         this.type = type;
-    }
-
-    public ConditionalOperator getConditionalOperator() {
-        return conditionalOperator;
-    }
-
-    public void setConditionalOperator(ConditionalOperator conditionalOperator) {
-        this.conditionalOperator = conditionalOperator;
-    }
-
-    public String getOnSourceConditionField() {
-        return onSourceConditionField;
-    }
-
-    public void setOnSourceConditionField(String onSourceConditionField) {
-        this.onSourceConditionField = onSourceConditionField;
-    }
-
-    public String getOnConditionField() {
-        return onConditionField;
-    }
-
-    public void setOnConditionField(String onConditionField) {
-        this.onConditionField = onConditionField;
     }
 }
