@@ -4,6 +4,7 @@ import javax.persistence.criteria.JoinType;
 
 public class FieldJoin {
 
+    private String sourceField;
     private String field;
     private JoinType type;
     private Condition on;
@@ -19,6 +20,27 @@ public class FieldJoin {
         this.field = field;
         this.type = type;
         this.on = on;
+    }
+
+    public FieldJoin(String sourceField, String field, JoinType type) {
+        this.sourceField = sourceField;
+        this.field = field;
+        this.type = type;
+    }
+
+    public FieldJoin(String sourceField, String field, JoinType type, Condition on) {
+        this.sourceField = sourceField;
+        this.field = field;
+        this.type = type;
+        this.on = on;
+    }
+
+    public String getSourceField() {
+        return sourceField;
+    }
+
+    public void setSourceField(String sourceField) {
+        this.sourceField = sourceField;
     }
 
     public String getField() {

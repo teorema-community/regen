@@ -42,7 +42,7 @@ public class GenericSpecification<T> implements Specification<T> {
 	private List<Predicate> addCondition(
 			Condition condition, LogicalOperator logicalOperator, List<Predicate> predicates, boolean last, Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
 	) throws NoSuchFieldException, ParseException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-		if (condition.getConditions() != null) {
+		if (!condition.getConditions().isEmpty()) {
 			List<Predicate> tempPredicates = new ArrayList<>();
 
 			int i = 0;
@@ -78,26 +78,39 @@ public class GenericSpecification<T> implements Specification<T> {
 				for (Field f : fields) {
 					JoinType joinType = condition.getJoinType();
 
-					Optional<FieldJoin> fieldJoinOptional = condition.getFieldJoins().stream()
-							.filter(fieldJoin -> f.getName().equals(fieldJoin.getField()))
-							.findFirst();
+					FieldJoin fieldJoin = null;
 
-					if (fieldJoinOptional.isPresent()) {
-						joinType = fieldJoinOptional.get().getType();
+					if (!condition.getFieldJoins().isEmpty()) {
+						for (FieldJoin fj : condition.getFieldJoins()) {
+							if (f.getName().equals(fieldJoin.getField()) && (
+									j == 0
+									|| fieldJoin.getSourceField() == null
+									|| fields.get(j - 1).getName().equals(fieldJoin.getSourceField())
+								)
+							) {
+								fieldJoin = fj;
+								break;
+							}
+						}
+					}
+
+
+					if (fieldJoin != null) {
+						joinType = fieldJoin.getType();
 					}
 
 					if (j == 0) {
-						join = root.join(f.getName(), condition.getJoinType());
+						join = root.join(f.getName(), joinType);
 					} else if (j < fields.size() - 1) {
-						join = join.join(f.getName(), condition.getJoinType());
+						join = join.join(f.getName(), joinType);
 					} else {
 						fieldType = f.getType();
 						fieldName = f.getName();
 						break;
 					}
 
-					if (fieldJoinOptional.isPresent()) {
-						join = setJoinCustomOn(join, fieldJoinOptional.get().getOn(), root, query, criteriaBuilder);
+					if (fieldJoin != null) {
+						join = setJoinCustomOn(join, fieldJoin.getOn(), root, query, criteriaBuilder);
 					}
 
 					j++;
@@ -265,7 +278,7 @@ public class GenericSpecification<T> implements Specification<T> {
 		if (on != null) {
 			List<Predicate> predicates = addCondition(condition, null, new ArrayList<Predicate>(), true, root, query, criteriaBuilder);
 
-			if (predicates != null && !predicates.isEmpty()) {
+			if (!predicates.isEmpty()) {
 				join.on(predicates.toArray(new Predicate[predicates.size()]));
 			}
 		}

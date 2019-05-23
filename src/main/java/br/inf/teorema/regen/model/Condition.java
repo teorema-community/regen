@@ -16,6 +16,7 @@ public class Condition {
 	private ConditionalOperator conditionalOperator = ConditionalOperator.EQUALS;
 	private Object value;
 	private List<Condition> conditions;
+	private Boolean isValueAField;
 	
 	public Condition() {}
 	
@@ -96,6 +97,18 @@ public class Condition {
 		return conditions;
 	}
 
+	public Boolean getValueAField() {
+		if (isValueAField == null) {
+			isValueAField = false;
+		}
+
+		return isValueAField;
+	}
+
+	public void setValueAField(Boolean valueAField) {
+		isValueAField = valueAField;
+	}
+
 	public void setConditions(List<Condition> conditions) {
 		this.conditions = conditions;
 	}
@@ -122,6 +135,14 @@ public class Condition {
 
 	public void addFieldJoin(String field, JoinType joinType) {
 		this.addFieldJoin(new FieldJoin(field, joinType));
+	}
+
+	public void addFieldJoin(String sourceField, String field, JoinType joinType, Condition on) {
+		this.addFieldJoin(new FieldJoin(sourceField, field, joinType, on));
+	}
+
+	public void addFieldJoin(String sourceField, String field, JoinType joinType) {
+		this.addFieldJoin(new FieldJoin(sourceField, field, joinType));
 	}
 	
 }
