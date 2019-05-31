@@ -254,6 +254,12 @@ public class GenericSpecification<T> implements Specification<T> {
 
 		Expression expression = join != null ? join.get(fieldName) : root.get(fieldName);
 
+		if (Arrays.asList(new ConditionalOperator[] {
+				ConditionalOperator.LIKE, ConditionalOperator.LIKE_START, ConditionalOperator.LIKE_END
+		}).contains(condition.getConditionalOperator())) {
+			expression = expression.as(String.class);
+		}
+
 		return new FieldExpression(expression, fieldType, fieldName);
 	}
 
