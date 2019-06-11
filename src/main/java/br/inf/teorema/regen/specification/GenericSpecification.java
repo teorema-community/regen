@@ -30,6 +30,7 @@ public class GenericSpecification<T> implements Specification<T> {
 	@Override
 	public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
 		try {
+			query = setGroupBy(root, query, criteriaBuilder);
 			return addCondition(this.condition, null, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
 		} catch (NoSuchFieldException | ParseException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
 			e.printStackTrace();
@@ -261,6 +262,20 @@ public class GenericSpecification<T> implements Specification<T> {
 		}
 
 		return new FieldExpression(expression, fieldType, fieldName);
+	}
+
+	private CriteriaQuery<?> setGroupBy(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+		if (!this.condition.getGroupBy().isEmpty()) {
+			List<Expression<?>> expressions = new ArrayList<>();
+
+			for (String groupBy : condition.getGroupBy()) {
+				expressions.add(root.get(groupBy));
+			}
+
+			query.groupBy(expressions);
+		}
+
+		return query;
 	}
 
 	public Condition getCondition() {

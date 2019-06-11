@@ -16,6 +16,7 @@ public class Condition {
 	private ConditionalOperator conditionalOperator = ConditionalOperator.EQUALS;
 	private Object value;
 	private List<Condition> conditions;
+	private List<String> groupBy;
 	
 	public Condition() {}
 
@@ -135,5 +136,16 @@ public class Condition {
 	public void addFieldJoin(String sourceField, String field, JoinType type) {
 		this.addFieldJoin(new FieldJoin(sourceField, field, type));
 	}
-	
+
+    public List<String> getGroupBy() {
+	    if (groupBy == null) {
+	        groupBy = new ArrayList();
+        }
+
+        return groupBy;
+    }
+
+    public void setGroupBy(List<String> groupBy) {
+        this.groupBy = groupBy;
+    }
 }
