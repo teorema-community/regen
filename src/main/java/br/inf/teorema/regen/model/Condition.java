@@ -15,6 +15,7 @@ public class Condition {
 	private List<FieldJoin> fieldJoins;
 	private ConditionalOperator conditionalOperator = ConditionalOperator.EQUALS;
 	private Object value;
+	private String expressionValue;
 	private List<Condition> conditions;
 	private List<String> groupBy;
 	
@@ -91,6 +92,14 @@ public class Condition {
 	}
 	public void setValue(Object value) {
 		this.value = value;
+	}
+
+	public String getExpressionValue() {
+		return expressionValue;
+	}
+
+	public void setExpressionValue(String expressionValue) {
+		this.expressionValue = expressionValue;
 	}
 
 	public List<Condition> getConditions() {
