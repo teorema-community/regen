@@ -77,7 +77,7 @@ public class GenericSpecification<T> implements Specification<T> {
 
 			if (condition.getExpressionValue() != null) {
 				isValueExpression = true;
-				value = this.getFieldExpressionByField(condition.getExpressionValue(), root).getExpression();
+				value = this.getFieldExpressionByField(condition.getExpressionValue(), condition.getJoinType(), root).getExpression();
 			} else if (fieldExpression.getFieldType().isEnum() && value != null && !(value instanceof Enum<?>)) {
 				value = fieldExpression.getFieldType().getDeclaredMethod("valueOf", String.class).invoke(null, value.toString());
 			}
@@ -236,7 +236,7 @@ public class GenericSpecification<T> implements Specification<T> {
 	private FieldExpression getFieldExpressionByCondition(
 		Condition condition, Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
 	) throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, ParseException, InvocationTargetException {
-		FieldExpression fieldExpression = this.getFieldExpressionByField(condition.getField(), root);
+		FieldExpression fieldExpression = this.getFieldExpressionByField(condition.getField(), condition.getJoinType(), root);
 
 		if (Arrays.asList(new ConditionalOperator[] {
 				ConditionalOperator.LIKE, ConditionalOperator.LIKE_START, ConditionalOperator.LIKE_END
@@ -247,7 +247,7 @@ public class GenericSpecification<T> implements Specification<T> {
 		return fieldExpression;
 	}
 
-	private FieldExpression getFieldExpressionByField(String field, Root<T> root) throws NoSuchFieldException {
+	private FieldExpression getFieldExpressionByField(String field, JoinType joinType, Root<T> root) throws NoSuchFieldException {
 		Join<?, ?> join = null;
 		Class<?> fieldType = null;
 		String fieldName = null;
@@ -256,7 +256,6 @@ public class GenericSpecification<T> implements Specification<T> {
 		if (fields.size() > 1) {
 			int j = 0;
 			for (Field f : fields) {
-				JoinType joinType = condition.getJoinType();
 				FieldJoin fieldJoin = null;
 
 				if (!condition.getFieldJoins().isEmpty()) {
@@ -303,7 +302,7 @@ public class GenericSpecification<T> implements Specification<T> {
 			List<Expression<?>> expressions = new ArrayList<>();
 
 			for (String groupBy : condition.getGroupBy()) {
-				expressions.add(this.getFieldExpressionByField(groupBy, root).getExpression());
+				expressions.add(this.getFieldExpressionByField(groupBy, JoinType.INNER ,root).getExpression());
 			}
 
 			query.groupBy(expressions);
