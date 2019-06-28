@@ -31,6 +31,15 @@ public class GenericSpecification<T> implements Specification<T> {
 	public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
 		try {
 			query = setGroupBy(root, query, criteriaBuilder);
+
+			Expression<?> caseExpression = criteriaBuilder.selectCase()
+					.when(criteriaBuilder.like(root.get("name"), "bay%"), 1)
+					.when(criteriaBuilder.like(root.get("name"), "%bay%"), 2)
+					.when(criteriaBuilder.like(root.get("name"), "%bay"), 3)
+					.otherwise(4);
+
+			query.orderBy(criteriaBuilder.asc(caseExpression));
+
 			return addCondition(this.condition, null, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
 		} catch (NoSuchFieldException | ParseException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
 			e.printStackTrace();
