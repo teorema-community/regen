@@ -5,6 +5,7 @@ import br.inf.teorema.regen.constants.LogicalOperator;
 import br.inf.teorema.regen.model.Condition;
 import br.inf.teorema.regen.model.FieldExpression;
 import br.inf.teorema.regen.model.FieldJoin;
+import br.inf.teorema.regen.model.OrderBy;
 import br.inf.teorema.regen.util.DateUtils;
 import br.inf.teorema.regen.util.ReflectionUtils;
 import org.springframework.data.jpa.domain.Specification;
@@ -31,14 +32,7 @@ public class GenericSpecification<T> implements Specification<T> {
 	public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
 		try {
 			query = setGroupBy(root, query, criteriaBuilder);
-
-			Expression<?> caseExpression = criteriaBuilder.selectCase()
-					.when(criteriaBuilder.like(root.get("name"), "bay%"), 1)
-					.when(criteriaBuilder.like(root.get("name"), "%bay%"), 2)
-					.when(criteriaBuilder.like(root.get("name"), "%bay"), 3)
-					.otherwise(4);
-
-			query.orderBy(criteriaBuilder.asc(caseExpression));
+			query = setOrderBy(root, query, criteriaBuilder);
 
 			return addCondition(this.condition, null, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
 		} catch (NoSuchFieldException | ParseException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
@@ -318,6 +312,27 @@ public class GenericSpecification<T> implements Specification<T> {
 		}
 
 		return query;
+	}
+
+	private CriteriaQuery<?> setOrderBy(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) throws NoSuchFieldException {
+		if (!this.condition.getOrderBys().isEmpty()) {
+			List<Order> orders = new ArrayList<>();
+
+			for (OrderBy orderBy : this.condition.getOrderBys()) {
+
+			}
+
+			query.orderBy(orders);
+		}
+
+		return query;
+		/*Expression<?> caseExpression = criteriaBuilder.selectCase()
+					.when(criteriaBuilder.like(root.get("name"), "bay%"), 1)
+					.when(criteriaBuilder.like(root.get("name"), "%bay%"), 2)
+					.when(criteriaBuilder.like(root.get("name"), "%bay"), 3)
+					.otherwise(4);
+
+			query.orderBy(criteriaBuilder.asc(caseExpression));*/
 	}
 
 	public Condition getCondition() {

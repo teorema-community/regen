@@ -18,7 +18,7 @@ public class Condition {
 	private String expressionValue;
 	private List<Condition> conditions;
 	private List<String> groupBy;
-	private List<Condition> orderBy;
+	private List<OrderBy> orderBys;
 	private List<Case> cases;
 	
 	public Condition() {}
@@ -160,16 +160,16 @@ public class Condition {
         this.groupBy = groupBy;
     }
 
-	public List<Condition> getOrderBy() {
-		if (orderBy == null) {
-			orderBy = new ArrayList<>();
+	public List<OrderBy> getOrderBys() {
+		if (orderBys == null) {
+			orderBys = new ArrayList<>();
 		}
 
-		return orderBy;
+		return orderBys;
 	}
 
-	public void setOrderBy(List<Condition> orderBy) {
-		this.orderBy = orderBy;
+	public void setOrderBys(List<OrderBy> orderBys) {
+		this.orderBys = orderBys;
 	}
 
 	public List<Case> getCases() {
