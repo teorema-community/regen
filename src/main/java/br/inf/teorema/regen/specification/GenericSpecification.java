@@ -2,9 +2,8 @@ package br.inf.teorema.regen.specification;
 
 import br.inf.teorema.regen.constants.ConditionalOperator;
 import br.inf.teorema.regen.constants.LogicalOperator;
-import br.inf.teorema.regen.model.Condition;
-import br.inf.teorema.regen.model.FieldExpression;
-import br.inf.teorema.regen.model.FieldJoin;
+import br.inf.teorema.regen.enums.OrderDirection;
+import br.inf.teorema.regen.model.*;
 import br.inf.teorema.regen.util.DateUtils;
 import br.inf.teorema.regen.util.ReflectionUtils;
 import org.springframework.data.jpa.domain.Specification;
@@ -31,6 +30,8 @@ public class GenericSpecification<T> implements Specification<T> {
 	public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
 		try {
 			query = setGroupBy(root, query, criteriaBuilder);
+			query = setOrderBy(root, query, criteriaBuilder);
+
 			return addCondition(this.condition, null, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
 		} catch (NoSuchFieldException | ParseException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
 			e.printStackTrace();
@@ -306,6 +307,62 @@ public class GenericSpecification<T> implements Specification<T> {
 			}
 
 			query.groupBy(expressions);
+		}
+
+		return query;
+	}
+
+	private CriteriaQuery<?> setOrderBy(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) throws NoSuchFieldException,
+			InvocationTargetException, NoSuchMethodException, ParseException, IllegalAccessException {
+		if (!this.condition.getOrderBies().isEmpty()) {
+			List<Order> orders = new ArrayList<>();
+
+			for (OrderBy orderBy : this.condition.getOrderBies()) {
+				if (orderBy.getCondition() != null) {
+					List<Expression<?>> expressions = new ArrayList<>();
+
+					if (orderBy.getCondition().getField() != null && !orderBy.getCondition().getField().isEmpty()) {
+						expressions.add(this.getFieldExpressionByCondition(orderBy.getCondition(), root, query, criteriaBuilder).getExpression());
+					}
+
+					for (Case cas : orderBy.getCondition().getCases()) {
+						CriteriaBuilder.Case cbCase = criteriaBuilder.selectCase();
+
+						for (WhenThen whenThen : cas.getWhenThens()) {
+							if (whenThen.getWhen() != null) {
+								Predicate whenPredicate = this.addCondition(whenThen.getWhen(), LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
+
+								if (whenThen.getExpressionThen() != null && !whenThen.getExpressionThen().isEmpty()) {
+									cbCase.when(whenPredicate, this.getFieldExpressionByField(whenThen.getExpressionThen(), JoinType.INNER, root).getExpression());
+								} else {
+									cbCase.when(whenPredicate, whenThen.getRawThen());
+								}
+							}
+						}
+
+						if (cas.getExpressionOtherwise() != null && !cas.getExpressionOtherwise().isEmpty()) {
+							cbCase.otherwise(this.getFieldExpressionByField(cas.getExpressionOtherwise(), JoinType.INNER, root).getExpression());
+						} else {
+							cbCase.otherwise(cas.getRawOtherwise());
+						}
+
+						expressions.add(cbCase);
+					}
+
+					for (Expression<?> expression : expressions) {
+						Order order = null;
+						if (orderBy.getDirection().equals(OrderDirection.ASC)) {
+							order = criteriaBuilder.asc(expression);
+						} else if (orderBy.getDirection().equals(OrderDirection.ASC)) {
+							order = criteriaBuilder.desc(expression);
+						}
+
+						orders.add(order);
+					}
+				}
+			}
+
+			query.orderBy(orders);
 		}
 
 		return query;
