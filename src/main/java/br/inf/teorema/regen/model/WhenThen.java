@@ -3,8 +3,8 @@ package br.inf.teorema.regen.model;
 public class WhenThen {
 
     private Condition when;
-    private Condition conditionalThen;
-    private Object pureThen;
+    private String expressionThen;
+    private Object rawThen;
 
     public Condition getWhen() {
         return when;
@@ -14,19 +14,19 @@ public class WhenThen {
         this.when = when;
     }
 
-    public Condition getConditionalThen() {
-        return conditionalThen;
+    public String getExpressionThen() {
+        return expressionThen;
     }
 
-    public void setConditionalThen(Condition conditionalThen) {
-        this.conditionalThen = conditionalThen;
+    public void setExpressionThen(String expressionThen) {
+        this.expressionThen = expressionThen;
     }
 
-    public Object getPureThen() {
-        return pureThen;
+    public Object getRawThen() {
+        return rawThen;
     }
 
-    public void setPureThen(Object pureThen) {
-        this.pureThen = pureThen;
+    public void setRawThen(Object rawThen) {
+        this.rawThen = rawThen;
     }
 }
