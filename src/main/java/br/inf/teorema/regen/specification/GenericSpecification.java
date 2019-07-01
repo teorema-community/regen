@@ -318,43 +318,47 @@ public class GenericSpecification<T> implements Specification<T> {
 			List<Order> orders = new ArrayList<>();
 
 			for (OrderBy orderBy : this.condition.getOrderBies()) {
-				List<Expression<?>> expressions = new ArrayList<>();
+				if (orderBy.getCondition() != null) {
+					List<Expression<?>> expressions = new ArrayList<>();
 
-				if (condition.getField() != null && !condition.getField().isEmpty()) {
-					expressions.add(this.getFieldExpressionByCondition(orderBy.getCondition(), root, query, criteriaBuilder).getExpression());
-				}
+					if (orderBy.getCondition().getField() != null && !orderBy.getCondition().getField().isEmpty()) {
+						expressions.add(this.getFieldExpressionByCondition(orderBy.getCondition(), root, query, criteriaBuilder).getExpression());
+					}
 
-				for (Case cas : condition.getCases()) {
-					CriteriaBuilder.Case cbCase = criteriaBuilder.selectCase();
+					for (Case cas : orderBy.getCondition().getCases()) {
+						CriteriaBuilder.Case cbCase = criteriaBuilder.selectCase();
 
-					for (WhenThen whenThen : cas.getWhenThens()) {
-						Expression<?> whenExpression = this.getFieldExpressionByCondition(whenThen.getWhen(), root, query, criteriaBuilder).getExpression();
+						for (WhenThen whenThen : cas.getWhenThens()) {
+							if (whenThen.getWhen() != null) {
+								Predicate whenPredicate = this.addCondition(whenThen.getWhen(), LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
 
-						if (whenThen.getExpressionThen() != null) {
-							cbCase.when(whenExpression, this.getFieldExpressionByField(whenThen.getExpressionThen(), JoinType.INNER, root).getExpression());
-						} else {
-							cbCase.when(whenExpression, whenThen.getRawThen());
+								if (whenThen.getExpressionThen() != null && !whenThen.getExpressionThen().isEmpty()) {
+									cbCase.when(whenPredicate, this.getFieldExpressionByField(whenThen.getExpressionThen(), JoinType.INNER, root).getExpression());
+								} else {
+									cbCase.when(whenPredicate, whenThen.getRawThen());
+								}
+							}
 						}
+
+						if (cas.getExpressionOtherwise() != null && !cas.getExpressionOtherwise().isEmpty()) {
+							cbCase.otherwise(this.getFieldExpressionByField(cas.getExpressionOtherwise(), JoinType.INNER, root).getExpression());
+						} else {
+							cbCase.otherwise(cas.getRawOtherwise());
+						}
+
+						expressions.add(cbCase);
 					}
 
-					if (cas.getExpressionOtherwise() != null) {
-						cbCase.otherwise(this.getFieldExpressionByField(cas.getExpressionOtherwise(), JoinType.INNER, root).getExpression());
-					} else {
-						cbCase.otherwise(cas.getRawOtherwise());
+					for (Expression<?> expression : expressions) {
+						Order order = null;
+						if (orderBy.getDirection().equals(OrderDirection.ASC)) {
+							order = criteriaBuilder.asc(expression);
+						} else if (orderBy.getDirection().equals(OrderDirection.ASC)) {
+							order = criteriaBuilder.desc(expression);
+						}
+
+						orders.add(order);
 					}
-
-					expressions.add(cbCase);
-				}
-
-				for (Expression<?> expression : expressions) {
-					Order order = null;
-					if (orderBy.getDirection().equals(OrderDirection.ASC)) {
-						order = criteriaBuilder.asc(expression);
-					} else if (orderBy.getDirection().equals(OrderDirection.ASC)) {
-						order = criteriaBuilder.desc(expression);
-					}
-
-					orders.add(order);
 				}
 			}
 
@@ -362,14 +366,6 @@ public class GenericSpecification<T> implements Specification<T> {
 		}
 
 		return query;
-
-		/*Expression<?> caseExpression = criteriaBuilder.selectCase()
-					.when(criteriaBuilder.like(root.get("name"), "bay%"), 1)
-					.when(criteriaBuilder.like(root.get("name"), "%bay%"), 2)
-					.when(criteriaBuilder.like(root.get("name"), "%bay"), 3)
-					.otherwise(4);
-
-			query.orderBy(criteriaBuilder.asc(caseExpression));*/
 	}
 
 	public Condition getCondition() {
