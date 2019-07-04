@@ -32,7 +32,7 @@ public class GenericSpecification<T> implements Specification<T> {
 			query = setGroupBy(root, query, criteriaBuilder);
 			query = setOrderBy(root, query, criteriaBuilder);
 
-			return addCondition(this.condition, null, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
+			return addCondition(this.condition, LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
 		} catch (NoSuchFieldException | ParseException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
 			e.printStackTrace();
 		}

@@ -33,7 +33,7 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
     public GenericProjectionRepositoryImpl() {}
 
     @Override
-    public Page<Map<String, Object>> findAllByFilterAndProjection(Specification<T> specification, List<String> projections, Pageable pageable, Class<T> clazz) throws NoSuchFieldException {
+    public Page<Map<String, Object>> findAllBySpecificationAndProjections(Specification<T> specification, List<String> projections, Pageable pageable, Class<T> clazz) throws NoSuchFieldException {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
 
         CriteriaQuery<Long> countQuery = criteriaBuilder.createQuery(Long.class);
