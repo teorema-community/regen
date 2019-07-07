@@ -32,6 +32,24 @@ If for some reason you need to use regen's generic specification in a different 
     // Pass the specification instance to your repository
     repository.findAll(specification);
 ```
+The Condition class has two basic properties:
+```java
+    Condition condition = new Condition();
+    condition.setField(/*The field of your class as string*/);
+    condition.setValue(/*the value of that field*/);
+```
+You can also just pass these arguments in the constructor:
+```java
+    Condition condition = new Condition("myField", "myValue");
+```
+Or you can receive it as JSON from client-side:
+```json
+    {
+        "field": "myField",
+        "value": "myValue"
+    }
+```
+For a detail step by step tutorial on how to use the Condition class please check the wiki: https://github.com/samuk159/regen/wiki
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

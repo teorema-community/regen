@@ -1,10 +1,12 @@
 package br.inf.teorema.regen.model;
 
-import br.inf.teorema.regen.constants.ConditionalOperator;
-import br.inf.teorema.regen.constants.LogicalOperator;
-
 import javax.persistence.criteria.JoinType;
+
+import br.inf.teorema.regen.enums.ConditionalOperator;
+import br.inf.teorema.regen.enums.LogicalOperator;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Condition {
@@ -38,6 +40,16 @@ public class Condition {
 		super();
 		this.field = field;
 		this.value = value;
+	}
+	
+	public Condition(String field, ConditionalOperator conditionalOperator, Object... values) {
+		super();
+		this.field = field;
+		this.conditionalOperator = conditionalOperator;
+		
+		if (values != null) {
+			this.value = Arrays.asList(values);
+		}
 	}
 
 	public Condition(LogicalOperator logicalOperator) {
@@ -122,6 +134,10 @@ public class Condition {
 	
 	public void addCondition(String field, ConditionalOperator conditionalOperator, Object value) {
 		this.addCondition(new Condition(field, conditionalOperator, value));
+	}
+	
+	public void addCondition(String field, ConditionalOperator conditionalOperator, Object... values) {
+		this.addCondition(new Condition(field, conditionalOperator, values));
 	}
 	
 	public void addCondition(String field, Object value) {

@@ -1,7 +1,7 @@
 package br.inf.teorema.regen.specification;
 
-import br.inf.teorema.regen.constants.ConditionalOperator;
-import br.inf.teorema.regen.constants.LogicalOperator;
+import br.inf.teorema.regen.enums.ConditionalOperator;
+import br.inf.teorema.regen.enums.LogicalOperator;
 import br.inf.teorema.regen.enums.OrderDirection;
 import br.inf.teorema.regen.model.*;
 import br.inf.teorema.regen.util.DateUtils;
