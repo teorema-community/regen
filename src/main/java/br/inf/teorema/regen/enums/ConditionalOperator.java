@@ -10,6 +10,7 @@ public enum ConditionalOperator {
 	LIKE,
 	LIKE_START,
 	LIKE_END,
+	CUSTOM_LIKE,
 	BETWEEN,
 	IN,
 	IS_NULL,

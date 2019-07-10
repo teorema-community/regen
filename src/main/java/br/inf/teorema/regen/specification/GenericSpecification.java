@@ -175,6 +175,12 @@ public class GenericSpecification<T> implements Specification<T> {
 				} else {
 					return criteriaBuilder.like(fieldExpression.getExpression(), "%" + value.toString());
 				}
+			case CUSTOM_LIKE:
+				if (isValueExpression) {
+					return criteriaBuilder.like(fieldExpression.getExpression(), (Expression) value);
+				} else {
+					return criteriaBuilder.like(fieldExpression.getExpression(), value.toString());
+				}
 			case BETWEEN:
 				List<Object> values = (List<Object>) value;
 
@@ -240,7 +246,8 @@ public class GenericSpecification<T> implements Specification<T> {
 		FieldExpression fieldExpression = this.getFieldExpressionByField(condition.getField(), condition.getJoinType(), root);
 
 		if (Arrays.asList(new ConditionalOperator[] {
-				ConditionalOperator.LIKE, ConditionalOperator.LIKE_START, ConditionalOperator.LIKE_END
+				ConditionalOperator.LIKE, ConditionalOperator.LIKE_START, 
+				ConditionalOperator.LIKE_END, ConditionalOperator.CUSTOM_LIKE
 		}).contains(condition.getConditionalOperator())) {
 			fieldExpression.setExpression(fieldExpression.getExpression().as(String.class));
 		}
