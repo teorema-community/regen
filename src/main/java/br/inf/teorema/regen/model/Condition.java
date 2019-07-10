@@ -24,9 +24,18 @@ public class Condition {
 	private List<Case> cases;
 	
 	public Condition() {}
+	
+	public Condition(Condition... conditions) {
+		this.addCondition(conditions);
+	}
 
 	public Condition(String field) {
 		this.field = field;
+	}
+	
+	public Condition(String field, Condition... conditions) {
+		this.field = field;
+		this.addCondition(conditions);
 	}
 
 	public Condition(String field, ConditionalOperator conditionalOperator, Object value) {
@@ -35,11 +44,26 @@ public class Condition {
 		this.conditionalOperator = conditionalOperator;
 		this.value = value;
 	}
+	
+	public Condition(String field, ConditionalOperator conditionalOperator, Object value, Condition... conditions) {
+		super();
+		this.field = field;
+		this.conditionalOperator = conditionalOperator;
+		this.value = value;
+		this.addCondition(conditions);
+	}
 
 	public Condition(String field, Object value) {
 		super();
 		this.field = field;
 		this.value = value;
+	}
+	
+	public Condition(String field, Object value, Condition... conditions) {
+		super();
+		this.field = field;
+		this.value = value;
+		this.addCondition(conditions);
 	}
 	
 	public Condition(String field, ConditionalOperator conditionalOperator, Object... values) {
@@ -55,6 +79,12 @@ public class Condition {
 	public Condition(LogicalOperator logicalOperator) {
 		super();
 		this.logicalOperator = logicalOperator;
+	}
+	
+	public Condition(LogicalOperator logicalOperator, Condition... conditions) {
+		super();
+		this.logicalOperator = logicalOperator;
+		this.addCondition(conditions);
 	}
 
 	public LogicalOperator getLogicalOperator() {
@@ -128,8 +158,8 @@ public class Condition {
 		this.conditions = conditions;
 	}
 	
-	public void addCondition(Condition condition) {
-		this.getConditions().add(condition);
+	public void addCondition(Condition... conditions) {
+		this.getConditions().addAll(Arrays.asList(conditions));
 	}
 	
 	public void addCondition(String field, ConditionalOperator conditionalOperator, Object value) {
