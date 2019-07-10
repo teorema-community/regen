@@ -37,7 +37,6 @@ public class ConditionMediator<T> {
     public Page<Map<String, Object>> findAllBySelectAndWhere(
         SelectAndWhere selectAndWhere,
         Pageable pageable,
-        JpaSpecificationExecutor<T> executor,
         GenericProjectionRepository<T> projectionRepository,
         Class<T> clazz
     ) throws NoSuchFieldException {
@@ -51,16 +50,14 @@ public class ConditionMediator<T> {
 
     public List<Map<String, Object>> findAllBySelectAndWhere(
             SelectAndWhere selectAndWhere,
-            JpaSpecificationExecutor<T> executor,
             GenericProjectionRepository<T> projectionRepository,
             Class<T> clazz
     ) throws NoSuchFieldException {
-        return findAllBySelectAndWhere(selectAndWhere, null, executor, projectionRepository, clazz).getContent();
+        return findAllBySelectAndWhere(selectAndWhere, null, projectionRepository, clazz).getContent();
     }
 
     public Optional<Map<String, Object>> findFirstBySelectAndWhere(
             SelectAndWhere selectAndWhere,
-            JpaSpecificationExecutor<T> executor,
             GenericProjectionRepository<T> projectionRepository,
             Class<T> clazz
     ) throws NoSuchFieldException {
