@@ -1,4 +1,4 @@
-package br.inf.teorema.regen.constants;
+package br.inf.teorema.regen.enums;
 
 public enum ConditionalOperator {
 	EQUALS, 
@@ -10,6 +10,7 @@ public enum ConditionalOperator {
 	LIKE,
 	LIKE_START,
 	LIKE_END,
+	CUSTOM_LIKE,
 	BETWEEN,
 	IN,
 	IS_NULL,

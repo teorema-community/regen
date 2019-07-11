@@ -1,4 +1,4 @@
-package br.inf.teorema.regen.constants;
+package br.inf.teorema.regen.enums;
 
 public enum LogicalOperator {	
 	AND, 

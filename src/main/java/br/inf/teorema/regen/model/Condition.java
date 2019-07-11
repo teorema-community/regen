@@ -1,10 +1,12 @@
 package br.inf.teorema.regen.model;
 
-import br.inf.teorema.regen.constants.ConditionalOperator;
-import br.inf.teorema.regen.constants.LogicalOperator;
-
 import javax.persistence.criteria.JoinType;
+
+import br.inf.teorema.regen.enums.ConditionalOperator;
+import br.inf.teorema.regen.enums.LogicalOperator;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Condition {
@@ -22,9 +24,18 @@ public class Condition {
 	private List<Case> cases;
 	
 	public Condition() {}
+	
+	public Condition(Condition... conditions) {
+		this.addCondition(conditions);
+	}
 
 	public Condition(String field) {
 		this.field = field;
+	}
+	
+	public Condition(String field, Condition... conditions) {
+		this.field = field;
+		this.addCondition(conditions);
 	}
 
 	public Condition(String field, ConditionalOperator conditionalOperator, Object value) {
@@ -33,16 +44,47 @@ public class Condition {
 		this.conditionalOperator = conditionalOperator;
 		this.value = value;
 	}
+	
+	public Condition(String field, ConditionalOperator conditionalOperator, Object value, Condition... conditions) {
+		super();
+		this.field = field;
+		this.conditionalOperator = conditionalOperator;
+		this.value = value;
+		this.addCondition(conditions);
+	}
 
 	public Condition(String field, Object value) {
 		super();
 		this.field = field;
 		this.value = value;
 	}
+	
+	public Condition(String field, Object value, Condition... conditions) {
+		super();
+		this.field = field;
+		this.value = value;
+		this.addCondition(conditions);
+	}
+	
+	public Condition(String field, ConditionalOperator conditionalOperator, Object... values) {
+		super();
+		this.field = field;
+		this.conditionalOperator = conditionalOperator;
+		
+		if (values != null) {
+			this.value = Arrays.asList(values);
+		}
+	}
 
 	public Condition(LogicalOperator logicalOperator) {
 		super();
 		this.logicalOperator = logicalOperator;
+	}
+	
+	public Condition(LogicalOperator logicalOperator, Condition... conditions) {
+		super();
+		this.logicalOperator = logicalOperator;
+		this.addCondition(conditions);
 	}
 
 	public LogicalOperator getLogicalOperator() {
@@ -116,12 +158,16 @@ public class Condition {
 		this.conditions = conditions;
 	}
 	
-	public void addCondition(Condition condition) {
-		this.getConditions().add(condition);
+	public void addCondition(Condition... conditions) {
+		this.getConditions().addAll(Arrays.asList(conditions));
 	}
 	
 	public void addCondition(String field, ConditionalOperator conditionalOperator, Object value) {
 		this.addCondition(new Condition(field, conditionalOperator, value));
+	}
+	
+	public void addCondition(String field, ConditionalOperator conditionalOperator, Object... values) {
+		this.addCondition(new Condition(field, conditionalOperator, values));
 	}
 	
 	public void addCondition(String field, Object value) {
