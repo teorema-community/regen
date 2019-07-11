@@ -67,8 +67,11 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
 
     public List<Tuple> paginate(CriteriaQuery<Tuple> tupleQuery, Pageable pageable) {
         TypedQuery<Tuple> typedQuery = entityManager.createQuery(tupleQuery);
-        typedQuery.setFirstResult(pageable.getPageNumber() * pageable.getPageSize());
-        typedQuery.setMaxResults(pageable.getPageSize());
+
+        if (pageable != null) {
+            typedQuery.setFirstResult(pageable.getPageNumber() * pageable.getPageSize());
+            typedQuery.setMaxResults(pageable.getPageSize());
+        }
 
         return typedQuery.getResultList();
     }
