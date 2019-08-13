@@ -4,6 +4,7 @@ import br.inf.teorema.regen.model.Condition;
 import br.inf.teorema.regen.model.SelectAndWhere;
 import br.inf.teorema.regen.repository.GenericProjectionRepository;
 import br.inf.teorema.regen.specification.GenericSpecification;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,7 +46,7 @@ public class ConditionMediator<T> {
             specification = new GenericSpecification<T>(selectAndWhere.getWhere(), clazz);
         }
 
-        return projectionRepository.findAllBySpecificationAndProjections(specification, selectAndWhere.getSelect(), pageable, clazz);
+        return projectionRepository.findAllBySpecificationAndProjections(specification, selectAndWhere, pageable, clazz);
     }
 
     public List<Map<String, Object>> findAllBySelectAndWhere(
@@ -67,7 +68,7 @@ public class ConditionMediator<T> {
         }
 
         List<Map<String, Object>> results = projectionRepository.findAllBySpecificationAndProjections(
-            specification, selectAndWhere.getSelect(), new PageRequest(0, 1), clazz
+            specification, selectAndWhere, new PageRequest(0, 1), clazz
         ).getContent();
 
         if (results.isEmpty()) {

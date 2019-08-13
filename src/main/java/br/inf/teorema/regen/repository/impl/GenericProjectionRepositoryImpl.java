@@ -1,5 +1,7 @@
 package br.inf.teorema.regen.repository.impl;
 
+import br.inf.teorema.regen.model.Condition;
+import br.inf.teorema.regen.model.SelectAndWhere;
 import br.inf.teorema.regen.repository.GenericProjectionRepository;
 import br.inf.teorema.regen.util.ReflectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,30 +35,34 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
     public GenericProjectionRepositoryImpl() {}
 
     @Override
-    public Page<Map<String, Object>> findAllBySpecificationAndProjections(Specification<T> specification, List<String> projections, Pageable pageable, Class<T> clazz) throws NoSuchFieldException {
+    public Page<Map<String, Object>> findAllBySpecificationAndProjections(Specification<T> specification, SelectAndWhere selectAndWhere, Pageable pageable, Class<T> clazz) throws NoSuchFieldException {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
 
         CriteriaQuery<Long> countQuery = criteriaBuilder.createQuery(Long.class);
         Root<T> root = countQuery.from(clazz);
-        Long count = count(criteriaBuilder, countQuery, specification, root);
+        Long count = count(criteriaBuilder, countQuery, specification, root, selectAndWhere.getWhere().getDistinct());
 
         CriteriaQuery<Tuple> tupleQuery = criteriaBuilder.createTupleQuery();
         root = tupleQuery.from(clazz);
-        tupleQuery = applyProjection(tupleQuery, root, projections, clazz);
+        tupleQuery = applyProjection(tupleQuery, root, selectAndWhere.getSelect(), clazz);
 
         if (specification != null) {
             tupleQuery.where(specification.toPredicate(root, tupleQuery, criteriaBuilder));
         }
 
         List<Tuple> tuples = paginate(tupleQuery, pageable);
-        List<Map<String, Object>> entities = parseResultList(tuples, projections, clazz);
+        List<Map<String, Object>> entities = parseResultList(tuples, selectAndWhere.getSelect(), clazz);
 
         Integer listSize = Math.max(1, entities.size());
         return new PageImpl<Map<String, Object>>(entities, new PageRequest(0, listSize), count);
     }
 
-    public Long count(CriteriaBuilder criteriaBuilder, CriteriaQuery<Long> countQuery, Specification<T> specification, Root<T> root) {
-        countQuery.select(criteriaBuilder.count(root));
+    public Long count(CriteriaBuilder criteriaBuilder, CriteriaQuery<Long> countQuery, Specification<T> specification, Root<T> root, Boolean distinct) {
+    	if (distinct) {
+    		countQuery.select(criteriaBuilder.countDistinct(root));
+    	} else {
+    		countQuery.select(criteriaBuilder.count(root));
+    	}        
 
         if (specification != null) {
             countQuery.where(specification.toPredicate(root, countQuery, criteriaBuilder));
