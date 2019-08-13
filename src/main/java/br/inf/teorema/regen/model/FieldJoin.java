@@ -1,12 +1,19 @@
 package br.inf.teorema.regen.model;
 
+import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class FieldJoin {
 
     private String sourceField;
     private String field;
     private JoinType type = JoinType.INNER;
+    private String alias;
+    
+    @JsonIgnore
+    private Join<?, ?> join;
 
     public FieldJoin() {}
 
@@ -30,7 +37,24 @@ public class FieldJoin {
         this.type = type;
     }
 
-    public String getSourceField() {
+	public FieldJoin(String sourceField, String field, JoinType type, String alias, Join<?, ?> join) {
+		super();
+		this.sourceField = sourceField;
+		this.field = field;
+		this.type = type;
+		this.alias = alias;
+		this.join = join;
+	}
+
+	public FieldJoin(String sourceField, String field, JoinType type, String alias) {
+		super();
+		this.sourceField = sourceField;
+		this.field = field;
+		this.type = type;
+		this.alias = alias;
+	}
+
+	public String getSourceField() {
         return sourceField;
     }
 
@@ -53,4 +77,21 @@ public class FieldJoin {
     public void setType(JoinType type) {
         this.type = type;
     }
+
+	public Join<?, ?> getJoin() {
+		return join;
+	}
+
+	public void setJoin(Join<?, ?> join) {
+		this.join = join;
+	}
+
+	public String getAlias() {
+		return alias;
+	}
+
+	public void setAlias(String alias) {
+		this.alias = alias;
+	}
+	
 }
