@@ -31,6 +31,8 @@ public class GenericSpecification<T> implements Specification<T> {
 	public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
 		try {
 			resetJoins();
+			query.distinct(condition.getDistinct());	
+			
 			query = setGroupBy(root, query, criteriaBuilder);
 			query = setOrderBy(root, query, criteriaBuilder);
 

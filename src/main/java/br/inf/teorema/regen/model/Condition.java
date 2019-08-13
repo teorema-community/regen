@@ -22,6 +22,7 @@ public class Condition {
 	private List<String> groupBy;
 	private List<OrderBy> orderBies;
 	private List<Case> cases;
+	private Boolean distinct = false;
 	
 	public Condition() {}
 	
@@ -229,4 +230,17 @@ public class Condition {
 	public void setCases(List<Case> cases) {
 		this.cases = cases;
 	}
+
+	public Boolean getDistinct() {
+		if (distinct == null) {
+			distinct = false;
+		}
+		
+		return distinct;
+	}
+
+	public void setDistinct(Boolean distinct) {
+		this.distinct = distinct;
+	}
+	
 }
