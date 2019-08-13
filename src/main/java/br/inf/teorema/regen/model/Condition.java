@@ -7,7 +7,9 @@ import br.inf.teorema.regen.enums.LogicalOperator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Condition {
 
@@ -22,6 +24,8 @@ public class Condition {
 	private List<String> groupBy;
 	private List<OrderBy> orderBies;
 	private List<Case> cases;
+	private Map<String, String> fieldAliases;
+	private Map<String, String> joinAliases;
 	
 	public Condition() {}
 	
@@ -229,4 +233,37 @@ public class Condition {
 	public void setCases(List<Case> cases) {
 		this.cases = cases;
 	}
+
+	public Map<String, String> getFieldAliases() {
+		if (fieldAliases == null) {
+			fieldAliases = new HashMap<>();
+		}
+		
+		return fieldAliases;
+	}
+
+	public void setFieldAliases(Map<String, String> fieldAliases) {
+		this.fieldAliases = fieldAliases;
+	}	
+	
+	public void addFieldAlias(String field, String alias) {
+		this.getFieldAliases().put(field, alias);
+	}
+
+	public Map<String, String> getJoinAliases() {
+		if (joinAliases == null) {
+			joinAliases = new HashMap<>();
+		}
+		
+		return joinAliases;
+	}
+
+	public void setJoinAliases(Map<String, String> joinAliases) {
+		this.joinAliases = joinAliases;
+	}
+	
+	public void addJoinAlias(String field, String alias) {
+		this.getJoinAliases().put(field, alias);
+	}
+	
 }

@@ -19,6 +19,7 @@ public class GenericSpecification<T> implements Specification<T> {
 
 	private Condition condition;
 	private Class<?> clazz;
+	private List<FieldJoin> joins;
 
 	public GenericSpecification(Condition condition, Class<?> clazz) {
 		super();
@@ -40,7 +41,6 @@ public class GenericSpecification<T> implements Specification<T> {
 		return null;
 	}
 
-	@SuppressWarnings("unchecked")
 	private List<Predicate> addCondition(
 			Condition condition, LogicalOperator logicalOperator, List<Predicate> predicates, boolean last, Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
 	) throws NoSuchFieldException, ParseException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
@@ -78,7 +78,7 @@ public class GenericSpecification<T> implements Specification<T> {
 
 			if (condition.getExpressionValue() != null) {
 				isValueExpression = true;
-				value = this.getFieldExpressionByField(condition.getExpressionValue(), condition.getJoinType(), root).getExpression();
+				value = this.getFieldExpressionByField(condition.getExpressionValue(), condition.getJoinType(), condition, root).getExpression();
 			} else if (fieldExpression.getFieldType().isEnum() && value != null && !(value instanceof Enum<?>)) {
 				value = fieldExpression.getFieldType().getDeclaredMethod("valueOf", String.class).invoke(null, value.toString());
 			}
@@ -97,6 +97,7 @@ public class GenericSpecification<T> implements Specification<T> {
 		return predicates;
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Predicate createPredicate(
 		FieldExpression fieldExpression, ConditionalOperator conditionalOperator, Object value, boolean isValueExpression, CriteriaBuilder criteriaBuilder
 	) throws ParseException {
@@ -240,10 +241,11 @@ public class GenericSpecification<T> implements Specification<T> {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private FieldExpression getFieldExpressionByCondition(
 		Condition condition, Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
 	) throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, ParseException, InvocationTargetException {
-		FieldExpression fieldExpression = this.getFieldExpressionByField(condition.getField(), condition.getJoinType(), root);
+		FieldExpression fieldExpression = this.getFieldExpressionByField(condition.getField(), condition.getJoinType(), condition, root);
 
 		if (Arrays.asList(new ConditionalOperator[] {
 				ConditionalOperator.LIKE, ConditionalOperator.LIKE_START, 
@@ -255,7 +257,8 @@ public class GenericSpecification<T> implements Specification<T> {
 		return fieldExpression;
 	}
 
-	private FieldExpression getFieldExpressionByField(String field, JoinType joinType, Root<T> root) throws NoSuchFieldException {
+	@SuppressWarnings("rawtypes")
+	private FieldExpression getFieldExpressionByField(String field, JoinType joinType, Condition condition, Root<T> root) throws NoSuchFieldException {
 		Join<?, ?> join = null;
 		Class<?> fieldType = null;
 		String fieldName = null;
@@ -283,26 +286,56 @@ public class GenericSpecification<T> implements Specification<T> {
 				if (fieldJoin != null) {
 					joinType = fieldJoin.getType();
 				}
+				
+				String tempFieldName = getFieldAlias(f.getName(), condition.getFieldAliases());
 
 				if (j == 0) {
-					join = root.join(f.getName(), joinType);
+					join = root.join(tempFieldName, joinType);
+					setExpressionAlias(join, tempFieldName, condition.getJoinAliases());
 				} else if (j < fields.size() - 1) {
-					join = join.join(f.getName(), joinType);
+					join = join.join(tempFieldName, joinType);
+					setExpressionAlias(join, tempFieldName, condition.getJoinAliases());
 				} else {
 					fieldType = f.getType();
-					fieldName = f.getName();
+					fieldName = tempFieldName;
 				}
 
 				j++;
 			}
 		} else {
 			fieldType = fields.get(0).getType();
-			fieldName = fields.get(0).getName();
+			fieldName = getFieldAlias(fields.get(0).getName(), condition.getFieldAliases());
 		}
 
 		Expression expression = join != null ? join.get(fieldName) : root.get(fieldName);
-
+		expression = setExpressionAlias(expression, fieldName, condition.getJoinAliases());
+		
 		return new FieldExpression(expression, fieldType, fieldName);
+	}
+	
+	private String getFieldAlias(String fieldName, Map<String, String> fieldAliases) {
+		if (fieldAliases != null) {
+			String alias = fieldAliases.get(fieldName);
+			
+			if (alias != null) {
+				return alias;
+			}
+		}
+		
+		return fieldName;
+	}
+	
+	@SuppressWarnings("rawtypes")
+	private Expression setExpressionAlias(Expression expression, String field, Map<String, String> aliases) {
+		if (aliases != null) {
+			String alias = aliases.get(field);
+			
+			if (alias != null) {
+				expression.alias(alias);
+			}
+		}
+		
+		return expression;
 	}
 
 	private CriteriaQuery<?> setGroupBy(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) throws NoSuchFieldException {
@@ -310,7 +343,7 @@ public class GenericSpecification<T> implements Specification<T> {
 			List<Expression<?>> expressions = new ArrayList<>();
 
 			for (String groupBy : condition.getGroupBy()) {
-				expressions.add(this.getFieldExpressionByField(groupBy, JoinType.INNER ,root).getExpression());
+				expressions.add(this.getFieldExpressionByField(groupBy, JoinType.INNER, condition, root).getExpression());
 			}
 
 			query.groupBy(expressions);
@@ -319,6 +352,7 @@ public class GenericSpecification<T> implements Specification<T> {
 		return query;
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private CriteriaQuery<?> setOrderBy(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) throws NoSuchFieldException,
 			InvocationTargetException, NoSuchMethodException, ParseException, IllegalAccessException {
 		if (!this.condition.getOrderBies().isEmpty()) {
@@ -340,7 +374,7 @@ public class GenericSpecification<T> implements Specification<T> {
 								Predicate whenPredicate = this.addCondition(whenThen.getWhen(), LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
 
 								if (whenThen.getExpressionThen() != null && !whenThen.getExpressionThen().isEmpty()) {
-									cbCase.when(whenPredicate, this.getFieldExpressionByField(whenThen.getExpressionThen(), JoinType.INNER, root).getExpression());
+									cbCase.when(whenPredicate, this.getFieldExpressionByField(whenThen.getExpressionThen(), JoinType.INNER, condition, root).getExpression());
 								} else {
 									cbCase.when(whenPredicate, whenThen.getRawThen());
 								}
@@ -348,7 +382,7 @@ public class GenericSpecification<T> implements Specification<T> {
 						}
 
 						if (cas.getExpressionOtherwise() != null && !cas.getExpressionOtherwise().isEmpty()) {
-							cbCase.otherwise(this.getFieldExpressionByField(cas.getExpressionOtherwise(), JoinType.INNER, root).getExpression());
+							cbCase.otherwise(this.getFieldExpressionByField(cas.getExpressionOtherwise(), JoinType.INNER, condition, root).getExpression());
 						} else {
 							cbCase.otherwise(cas.getRawOtherwise());
 						}
