@@ -571,7 +571,7 @@ public class ReflectionUtils {
 		
 		for (Field f: fields) {
 			if (f.isAnnotationPresent(Id.class) || f.isAnnotationPresent(EmbeddedId.class)) {
-				BeanUtils.getProperty(entity, f.getName());
+				return BeanUtils.getProperty(entity, f.getName());
 			}
 		}
 		
