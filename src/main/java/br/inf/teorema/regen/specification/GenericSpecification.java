@@ -410,7 +410,7 @@ public class GenericSpecification<T> implements Specification<T> {
 						Order order = null;
 						if (orderBy.getDirection().equals(OrderDirection.ASC)) {
 							order = criteriaBuilder.asc(expression);
-						} else if (orderBy.getDirection().equals(OrderDirection.ASC)) {
+						} else if (orderBy.getDirection().equals(OrderDirection.DESC)) {
 							order = criteriaBuilder.desc(expression);
 						}
 
