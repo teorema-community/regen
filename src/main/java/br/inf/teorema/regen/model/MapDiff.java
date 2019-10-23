@@ -7,7 +7,6 @@ public class MapDiff {
 
 	private Map<String, Object> oldMap;
 	private Map<String, Object> newMap;
-	private Map<String, Object> diffMap;
 	private boolean hasDiff = false;
 	
 	public MapDiff() {
@@ -23,19 +22,6 @@ public class MapDiff {
 		super();
 		this.oldMap = oldMap;
 		this.newMap = newMap;
-		this.hasDiff = hasDiff;
-	}
-	public MapDiff(Map<String, Object> oldMap, Map<String, Object> newMap, Map<String, Object> diffMap) {
-		super();
-		this.oldMap = oldMap;
-		this.newMap = newMap;
-		this.diffMap = diffMap;
-	}	
-	public MapDiff(Map<String, Object> oldMap, Map<String, Object> newMap, Map<String, Object> diffMap, boolean hasDiff) {
-		super();
-		this.oldMap = oldMap;
-		this.newMap = newMap;
-		this.diffMap = diffMap;
 		this.hasDiff = hasDiff;
 	}
 	
@@ -58,16 +44,6 @@ public class MapDiff {
 	}
 	public void setNewMap(Map<String, Object> newMap) {
 		this.newMap = newMap;
-	}
-	public Map<String, Object> getDiffMap() {
-		if (diffMap == null) {
-			diffMap = new HashMap<>();
-		}
-		
-		return diffMap;
-	}
-	public void setDiffMap(Map<String, Object> diffMap) {
-		this.diffMap = diffMap;
 	}
 	public boolean isHasDiff() {
 		return hasDiff;
