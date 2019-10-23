@@ -2,6 +2,9 @@ package br.inf.teorema.regen.util;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
+import br.inf.teorema.regen.model.MapDiff;
+
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 
@@ -316,10 +319,11 @@ public class ReflectionUtils {
 	}
 	
 	public static Field getIdField(Class<?> clazz) { 
-		List<Field> pkFields = getPKFields(clazz, Id.class);
-		
-		if (pkFields.size() == 1) {
-			return pkFields.get(0);
+		List<Field> fields = getAllFields(clazz);
+		for (Field f: fields) {
+			if (f.isAnnotationPresent(Id.class) || f.isAnnotationPresent(EmbeddedId.class)) {
+				return f;				
+			}
 		}
 		
 		return null;
@@ -576,6 +580,209 @@ public class ReflectionUtils {
 		}
 		
 		throw new NullPointerException();
+	}
+	
+	public static MapDiff getObjectDiff(Object oldObject, Object newObject) {
+		MapDiff diff = new MapDiff();
+		
+		Map<String, Object> oldObjectMap = null;
+		Map<String, Object> newObjectMap = null;
+		
+		if (oldObject != null) {
+			oldObjectMap = ObjectUtils.objectToMap(oldObject);
+		}
+		
+		if (newObject != null) {
+			newObjectMap = ObjectUtils.objectToMap(newObject);
+		}
+		
+		if (oldObject == null && newObject != null) {
+			diff.setHasDiff(true);
+			diff.setNewMap(newObjectMap);
+		} else if (newObject == null && oldObject != null) {
+			diff.setHasDiff(true);
+			diff.setOldMap(oldObjectMap);
+		} else if (oldObject != null && newObject != null) {
+			diff = getMapDiff(oldObjectMap, newObjectMap);
+			diff.setHasDiff(diff.isHasDiff());
+		}
+		
+		return diff;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static MapDiff getMapDiff(Map<String, Object> inputOldMap, Map<String, Object> inputNewMap) {		
+		Map<String, Object> oldMap = new HashMap<String, Object>();
+		Map<String, Object> newMap = new HashMap<String, Object>();
+		boolean atLeastOneDiff = false;
+		
+		for (Entry<String, Object> entry : inputOldMap.entrySet()) {
+			Object oldValue = entry.getValue();
+			Object newValue = inputNewMap.get(entry.getKey());
+			
+			Object newOldValue = null;
+			Object newNewValue = null;
+			boolean hasDiff = false;
+			
+			if (oldValue != null && newValue != null) {
+				if (oldValue instanceof Collection<?> || newValue instanceof Collection<?>) {
+					List<Map<String, Object>> oldList = (List<Map<String, Object>>) oldValue;
+					List<Map<String, Object>> newList = (List<Map<String, Object>>) newValue;
+					
+					if (!oldList.equals(newList)) {
+						hasDiff = true;
+						newOldValue = oldList;
+						newNewValue = newList;
+					}
+				} else if (oldValue instanceof Map<?, ?> || newValue instanceof Map<?, ?>) {
+					MapDiff innerDiff = getMapDiff((Map<String, Object>) oldValue, (Map<String, Object>) newValue);
+					
+					hasDiff = innerDiff.isHasDiff();
+					if (innerDiff.isHasDiff()) {
+						newOldValue = innerDiff.getOldMap();
+						newNewValue = innerDiff.getNewMap();
+					}
+				} else if (!oldValue.equals(newValue)) {
+					hasDiff = true;
+					newOldValue = oldValue;
+					newNewValue = newValue;
+				}
+			} else if (
+				(oldValue != null && newValue == null) 
+				|| (oldValue == null && newValue != null)
+			) {
+				hasDiff = true;
+				newOldValue = oldValue;
+				newNewValue = newValue;
+			}
+			
+			if (hasDiff) {
+				atLeastOneDiff = hasDiff;
+				oldMap.put(entry.getKey(), newOldValue);
+				newMap.put(entry.getKey(), newNewValue);
+			}
+		}
+		
+		for(Entry<String, Object> entry : inputNewMap.entrySet()) {
+			if (!oldMap.containsKey(entry.getKey())) {
+				atLeastOneDiff = true;
+				oldMap.put(entry.getKey(), null);
+				newMap.put(entry.getKey(), entry.getValue());
+			}
+		}
+		
+		return new MapDiff(oldMap, newMap, atLeastOneDiff);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static MapDiff getEntityDiff(Object oldEntity, Object newEntity) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {		
+		Map<String, Object> outputOldMap = null;
+		Map<String, Object> outputNewMap = null;
+		boolean atLeastOneDiff = false;
+		
+		if (oldEntity != null && newEntity != null) {
+			return getEntityMapDiff(oldEntity, newEntity);		
+		} else if (oldEntity == null) {
+			atLeastOneDiff = true;
+			outputNewMap = ObjectUtils.objectToMap(newEntity);
+		} else if (newEntity == null) {
+			atLeastOneDiff = true;
+			outputOldMap = ObjectUtils.objectToMap(oldEntity);
+		}
+		
+		return new MapDiff(outputOldMap, outputNewMap, atLeastOneDiff);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static MapDiff getEntityMapDiff(Object oldValue, Object newValue) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+		Map<String, Object> outputOldMap = new HashMap<String, Object>();
+		Map<String, Object> outputNewMap = new HashMap<String, Object>();
+		boolean atLeastOneDiff = false;
+		List<Field> fields = getAllFields(oldValue.getClass());
+		
+		if (fields != null) {
+			for (Field field : fields) {
+				Object oldV = BeanUtils.getProperty(oldValue, field.getName());
+				Object newV = BeanUtils.getProperty(newValue, field.getName());
+				
+				if (isOrExtendsIterable(oldV.getClass()) || isOrExtendsIterable(newV.getClass())) {
+					List<Map<String, Object>> intputOldList = (List<Map<String, Object>>) oldValue;
+					List<Map<String, Object>> intputNewList = (List<Map<String, Object>>) newValue;		
+					List<Map<String, Object>> outputOldList = new ArrayList<Map<String, Object>>();
+					List<Map<String, Object>> outputNewList = new ArrayList<Map<String, Object>>();
+					
+					String idFieldName = getIdField(intputOldList.getClass()).getName();
+					List<Object> idsVerifies = new ArrayList<Object>();
+					boolean innerAtLeastOneDiff = false;
+					
+					for (Map<String, Object> oldEntity : intputOldList) {
+						Object id = BeanUtils.getProperty(oldEntity, idFieldName);
+						
+						if (id != null) {
+							boolean found = false;
+							
+							for (Map<String, Object> newEntity : intputNewList) {
+								Object newEntityId = BeanUtils.getProperty(newEntity, idFieldName);
+								
+								if (newEntityId.equals(id)) {
+									found = true;
+									MapDiff innerDiff = getEntityMapDiff(oldEntity, newEntity);
+									
+									if (innerDiff.isHasDiff()) {
+										innerAtLeastOneDiff = true;
+										
+										innerDiff.getOldMap().put(idFieldName, id);
+										innerDiff.getNewMap().put(idFieldName, newEntityId);
+										
+										outputOldList.add(innerDiff.getOldMap());
+										outputNewList.add(innerDiff.getNewMap());
+									}
+									
+									break;
+								}
+							}
+							
+							if (!found) {
+								innerAtLeastOneDiff = true;
+								outputOldList.add(ObjectUtils.objectToMap(oldEntity));
+							}
+							
+							idsVerifies.add(id);
+						}
+					}
+					
+					for (Map<String, Object> newEntity : intputNewList) {
+						Object newEntityId = BeanUtils.getProperty(newEntity, idFieldName);
+						
+						if (!idsVerifies.contains(newEntityId)) {
+							innerAtLeastOneDiff = true;
+							outputNewList.add(ObjectUtils.objectToMap(newEntity));							
+							idsVerifies.add(newEntityId);
+						}
+					}
+					
+					if (innerAtLeastOneDiff) {
+						atLeastOneDiff = true;
+						outputOldMap.put(field.getName(), outputOldList);
+						outputNewMap.put(field.getName(), outputNewList);
+					}
+				} else if (isEntity(oldV.getClass()) || isEntity(newV.getClass())) {
+					MapDiff innerDiff = getEntityMapDiff(oldV, newV);
+					
+					if (innerDiff.isHasDiff()) {
+						atLeastOneDiff = true;
+						outputOldMap.put(field.getName(), innerDiff.getOldMap());
+						outputNewMap.put(field.getName(), innerDiff.getNewMap());
+					}
+				} else if (!oldV.equals(newV)) {
+					atLeastOneDiff = true;
+					outputOldMap.put(field.getName(), oldV);
+					outputNewMap.put(field.getName(), newV);
+				}
+			}
+		}
+		
+		return new MapDiff(outputOldMap, outputNewMap, atLeastOneDiff);
 	}
 	
 }
