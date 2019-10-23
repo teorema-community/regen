@@ -86,9 +86,15 @@ public class GenericSpecification<T> implements Specification<T> {
 				value = fieldExpression.getFieldType().getDeclaredMethod("valueOf", String.class).invoke(null, value.toString());
 			}
 
-			predicates.add(createPredicate(
+			Predicate predicate = createPredicate(
 				fieldExpression, condition.getConditionalOperator(), value, isValueExpression, criteriaBuilder
-			));
+			);
+			
+			if (condition.getNot() != null && condition.getNot()) {
+				predicate = criteriaBuilder.not(predicate);
+			}
+			
+			predicates.add(predicate);
 		}
 
 		if (last && logicalOperator != null) {
@@ -205,7 +211,7 @@ public class GenericSpecification<T> implements Specification<T> {
 				}
 			case IN:
 				List<Object> newList = new ArrayList<Object>();
-				List<Object> valueList = Arrays.asList(value.toString().split(","));
+				List<Object> valueList = (List<Object>) value;
 
 				for (Object v : valueList) {
 					Object newValue = v.toString().trim();
