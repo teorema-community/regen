@@ -16,6 +16,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public class ReflectionUtils {
 
@@ -674,14 +675,13 @@ public class ReflectionUtils {
 		return new MapDiff(oldMap, newMap, atLeastOneDiff);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static MapDiff getEntityDiff(Object oldEntity, Object newEntity) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {		
 		Map<String, Object> outputOldMap = null;
 		Map<String, Object> outputNewMap = null;
 		boolean atLeastOneDiff = false;
 		
 		if (oldEntity != null && newEntity != null) {
-			return getEntityMapDiff(oldEntity, newEntity);		
+			return innerGetEntityDiff(oldEntity, newEntity);		
 		} else if (oldEntity == null) {
 			atLeastOneDiff = true;
 			outputNewMap = ObjectUtils.objectToMap(newEntity);
@@ -694,11 +694,16 @@ public class ReflectionUtils {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static MapDiff getEntityMapDiff(Object oldValue, Object newValue) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+	private static MapDiff innerGetEntityDiff(Object oldValue, Object newValue) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 		Map<String, Object> outputOldMap = new HashMap<String, Object>();
 		Map<String, Object> outputNewMap = new HashMap<String, Object>();
 		boolean atLeastOneDiff = false;
-		List<Field> fields = getAllFields(oldValue.getClass());
+		
+		Set<String> oldValueKeys = ObjectUtils.objectToMap(oldValue).keySet();
+		Set<String> newValueKeys = ObjectUtils.objectToMap(newValue).keySet();
+		List<Field> fields = getAllFields(oldValue.getClass()).stream()
+				.filter(f -> oldValueKeys.contains(f.getName()) || newValueKeys.contains(f.getName()))
+				.collect(Collectors.toList());
 		
 		if (fields != null) {
 			for (Field field : fields) {
@@ -726,7 +731,7 @@ public class ReflectionUtils {
 								
 								if (newEntityId.equals(id)) {
 									found = true;
-									MapDiff innerDiff = getEntityMapDiff(oldEntity, newEntity);
+									MapDiff innerDiff = innerGetEntityDiff(oldEntity, newEntity);
 									
 									if (innerDiff.isHasDiff()) {
 										innerAtLeastOneDiff = true;
@@ -767,7 +772,7 @@ public class ReflectionUtils {
 						outputNewMap.put(field.getName(), outputNewList);
 					}
 				} else if (isEntity(oldV.getClass()) || isEntity(newV.getClass())) {
-					MapDiff innerDiff = getEntityMapDiff(oldV, newV);
+					MapDiff innerDiff = innerGetEntityDiff(oldV, newV);
 					
 					if (innerDiff.isHasDiff()) {
 						atLeastOneDiff = true;
