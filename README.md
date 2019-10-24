@@ -49,7 +49,10 @@ Or you can receive it as JSON from client-side:
         "value": "myValue"
     }
 ```
-For a detail step by step tutorial on how to use the Condition class please check the wiki: https://github.com/teorema-community/regen/wiki
+**WARNING**
+In order to work properly your composite key classes need to implement equals
+
+For a detailed step by step tutorial on how to use regen please check the wiki: https://github.com/teorema-community/regen/wiki
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
