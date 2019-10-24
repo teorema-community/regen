@@ -5,9 +5,6 @@ import com.google.common.collect.Multimap;
 
 import br.inf.teorema.regen.model.MapDiff;
 
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.beanutils.PropertyUtils;
-
 import javax.persistence.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -51,6 +48,20 @@ public class ReflectionUtils {
 				throw e;
 			}
 		}
+    }
+    
+    public static Object getFieldValue(Object obj, String name) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
+    	Field field = getField(obj.getClass(), name);
+    	field.setAccessible(true);
+    	return field.get(obj);
+    }
+    
+    public static <T> T setFieldValue(T obj, String name, Object value) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
+    	Field field = getField(obj.getClass(), name);
+    	field.setAccessible(true);
+    	field.set(obj, value);
+    	
+    	return obj;
     }
     
     public static boolean isEntityOrMappedSuperClass(Class<?> clazz) {
@@ -532,14 +543,14 @@ public class ReflectionUtils {
 			
 			if (ReflectionUtils.isEntity(firstFieldClass)) {
 				Map<String, Object> nestedMap = (Map<String, Object>) entry.getValue();				
-				Object oldValue = PropertyUtils.getProperty(entity, firstField.getName());
+				Object oldValue = getFieldValue(entity, firstField.getName());
 				Object newValue = patch(nestedMap, oldValue, firstFieldClass);
-				BeanUtils.setProperty(entity, entry.getKey(), newValue);				
+				entity = setFieldValue(entity, entry.getKey(), newValue);			
 			} else if (ObjectUtils.isOrExtendsIterable(firstFieldClass)) {
 				Class<?> nestedClass = ReflectionUtils.getFieldEntityOrType(firstField);
 				String pkName = ReflectionUtils.getPKField(nestedClass).getName();
 				
-				List<Object> oldList = (List<Object>) PropertyUtils.getProperty(entity, firstField.getName());
+				List<Object> oldList = (List<Object>) getFieldValue(entity, firstField.getName());
 				List<Map<String, Object>> newList = (List<Map<String, Object>>) entry.getValue();
 				List<Object> patchedList = oldList;
 				
@@ -559,24 +570,24 @@ public class ReflectionUtils {
 					}
 				}
 				
-				BeanUtils.setProperty(entity, entry.getKey(), patchedList);
+				entity = setFieldValue(entity, entry.getKey(), patchedList);
 			} else if (ReflectionUtils.isId(firstField)) {
 				throw new IllegalArgumentException("Não é permitido alterar chaves primárias. Remova o campo " + firstField.getName());
 			} else {
-				BeanUtils.setProperty(entity, entry.getKey(), entry.getValue());
+				entity = setFieldValue(entity, entry.getKey(), entry.getValue());
 			}
 		}
 		
 		return entity;
 	}
 	
-	public static Object getPK(Object entity) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+	public static Object getPK(Object entity) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException {
 		Class<?> clazz = entity.getClass();		
 		List<Field> fields = getAllFields(clazz);
 		
 		for (Field f: fields) {
 			if (f.isAnnotationPresent(Id.class) || f.isAnnotationPresent(EmbeddedId.class)) {
-				return BeanUtils.getProperty(entity, f.getName());
+				return getFieldValue(entity, f.getName());
 			}
 		}
 		
@@ -675,7 +686,7 @@ public class ReflectionUtils {
 		return new MapDiff(oldMap, newMap, atLeastOneDiff);
 	}
 	
-	public static MapDiff getEntityDiff(Object oldEntity, Object newEntity) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {		
+	public static MapDiff getEntityDiff(Object oldEntity, Object newEntity) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, IllegalArgumentException, NoSuchFieldException {		
 		Map<String, Object> outputOldMap = null;
 		Map<String, Object> outputNewMap = null;
 		boolean atLeastOneDiff = false;
@@ -694,100 +705,112 @@ public class ReflectionUtils {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static MapDiff innerGetEntityDiff(Object oldValue, Object newValue) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+	private static MapDiff innerGetEntityDiff(Object oldValue, Object newValue) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, IllegalArgumentException, NoSuchFieldException {
 		Map<String, Object> outputOldMap = new HashMap<String, Object>();
-		Map<String, Object> outputNewMap = new HashMap<String, Object>();
-		boolean atLeastOneDiff = false;
-		
-		Set<String> oldValueKeys = ObjectUtils.objectToMap(oldValue).keySet();
-		Set<String> newValueKeys = ObjectUtils.objectToMap(newValue).keySet();
-		List<Field> fields = getAllFields(oldValue.getClass()).stream()
-				.filter(f -> oldValueKeys.contains(f.getName()) || newValueKeys.contains(f.getName()))
-				.collect(Collectors.toList());
-		
-		if (fields != null) {
-			for (Field field : fields) {
-				Object oldV = BeanUtils.getProperty(oldValue, field.getName());
-				Object newV = BeanUtils.getProperty(newValue, field.getName());
-				
-				if (isOrExtendsIterable(oldV.getClass()) || isOrExtendsIterable(newV.getClass())) {
-					List<Map<String, Object>> intputOldList = (List<Map<String, Object>>) oldValue;
-					List<Map<String, Object>> intputNewList = (List<Map<String, Object>>) newValue;		
-					List<Map<String, Object>> outputOldList = new ArrayList<Map<String, Object>>();
-					List<Map<String, Object>> outputNewList = new ArrayList<Map<String, Object>>();
-					
-					String idFieldName = getIdField(intputOldList.getClass()).getName();
-					List<Object> idsVerifies = new ArrayList<Object>();
-					boolean innerAtLeastOneDiff = false;
-					
-					for (Map<String, Object> oldEntity : intputOldList) {
-						Object id = BeanUtils.getProperty(oldEntity, idFieldName);
-						
-						if (id != null) {
-							boolean found = false;
-							
-							for (Map<String, Object> newEntity : intputNewList) {
-								Object newEntityId = BeanUtils.getProperty(newEntity, idFieldName);
-								
-								if (newEntityId.equals(id)) {
-									found = true;
-									MapDiff innerDiff = innerGetEntityDiff(oldEntity, newEntity);
-									
-									if (innerDiff.isHasDiff()) {
-										innerAtLeastOneDiff = true;
-										
-										innerDiff.getOldMap().put(idFieldName, id);
-										innerDiff.getNewMap().put(idFieldName, newEntityId);
-										
-										outputOldList.add(innerDiff.getOldMap());
-										outputNewList.add(innerDiff.getNewMap());
-									}
-									
-									break;
-								}
-							}
-							
-							if (!found) {
-								innerAtLeastOneDiff = true;
-								outputOldList.add(ObjectUtils.objectToMap(oldEntity));
-							}
-							
-							idsVerifies.add(id);
-						}
-					}
-					
-					for (Map<String, Object> newEntity : intputNewList) {
-						Object newEntityId = BeanUtils.getProperty(newEntity, idFieldName);
-						
-						if (!idsVerifies.contains(newEntityId)) {
-							innerAtLeastOneDiff = true;
-							outputNewList.add(ObjectUtils.objectToMap(newEntity));							
-							idsVerifies.add(newEntityId);
-						}
-					}
-					
-					if (innerAtLeastOneDiff) {
-						atLeastOneDiff = true;
-						outputOldMap.put(field.getName(), outputOldList);
-						outputNewMap.put(field.getName(), outputNewList);
-					}
-				} else if (isEntity(oldV.getClass()) || isEntity(newV.getClass())) {
-					MapDiff innerDiff = innerGetEntityDiff(oldV, newV);
-					
-					if (innerDiff.isHasDiff()) {
-						atLeastOneDiff = true;
-						outputOldMap.put(field.getName(), innerDiff.getOldMap());
-						outputNewMap.put(field.getName(), innerDiff.getNewMap());
-					}
-				} else if (!oldV.equals(newV)) {
-					atLeastOneDiff = true;
-					outputOldMap.put(field.getName(), oldV);
-					outputNewMap.put(field.getName(), newV);
-				}
-			}
-		}
-		
-		return new MapDiff(outputOldMap, outputNewMap, atLeastOneDiff);
+        Map<String, Object> outputNewMap = new HashMap<String, Object>();
+        boolean atLeastOneDiff = false;
+
+        Set<String> oldValueKeys = ObjectUtils.objectToMap(oldValue).keySet();
+        Set<String> newValueKeys = ObjectUtils.objectToMap(newValue).keySet();
+        List<Field> fields = ReflectionUtils.getAllFields(oldValue.getClass()).stream()
+                .filter(f -> (oldValueKeys.contains(f.getName()) || newValueKeys.contains(f.getName())) && !f.isAnnotationPresent(Transient.class))
+                .collect(Collectors.toList());
+
+        for (Field field : fields) {
+            field.setAccessible(true);
+            Object oldV = field.get(oldValue);
+            Object newV = field.get(newValue);
+
+            if (oldV == null && newV != null) {
+                atLeastOneDiff = true;
+                outputNewMap.put(field.getName(), ObjectUtils.objectToMap(newV));
+            } else if (oldV != null && newV == null) {
+                atLeastOneDiff = true;
+                outputOldMap.put(field.getName(), ObjectUtils.objectToMap(oldV));
+            } else if (oldV != null && newV != null) {
+                if (ReflectionUtils.isOrExtendsIterable(oldV.getClass()) || ReflectionUtils.isOrExtendsIterable(newV.getClass())) {
+                    List<Object> intputOldList = (List<Object>) oldV;
+                    List<Object> intputNewList = (List<Object>) newV;
+
+                    if (intputOldList.isEmpty() && intputNewList.isEmpty()) {
+                        continue;
+                    }
+
+                    List<Map<String, Object>> outputOldList = new ArrayList<Map<String, Object>>();
+                    List<Map<String, Object>> outputNewList = new ArrayList<Map<String, Object>>();
+
+                    String idFieldName = ReflectionUtils.getIdField(ReflectionUtils.getFieldEntityOrType(field)).getName();
+                    List<Object> idsVerifies = new ArrayList<Object>();
+                    boolean innerAtLeastOneDiff = false;
+
+                    for (Object oldEntity : intputOldList) {
+                        Object id = getFieldValue(oldEntity, idFieldName);
+
+                        if (id != null) {
+                            boolean found = false;
+
+                            for (Object newEntity : intputNewList) {
+                                Object newEntityId = getFieldValue(newEntity, idFieldName);
+
+                                if (newEntityId.equals(id)) {
+                                    found = true;
+                                    MapDiff innerDiff = innerGetEntityDiff(oldEntity, newEntity);
+
+                                    if (innerDiff.isHasDiff()) {
+                                        innerAtLeastOneDiff = true;
+
+                                        innerDiff.getOldMap().put(idFieldName, id);
+                                        innerDiff.getNewMap().put(idFieldName, newEntityId);
+
+                                        outputOldList.add(innerDiff.getOldMap());
+                                        outputNewList.add(innerDiff.getNewMap());
+                                    }
+
+                                    break;
+                                }
+                            }
+
+                            if (!found) {
+                                innerAtLeastOneDiff = true;
+                                outputOldList.add(ObjectUtils.objectToMap(oldEntity));
+                            }
+
+                            idsVerifies.add(id);
+                        }
+                    }
+
+                    for (Object newEntity : intputNewList) {
+                        Object newEntityId = getFieldValue(newEntity, idFieldName);
+
+                        if (!idsVerifies.contains(newEntityId)) {
+                            innerAtLeastOneDiff = true;
+                            outputNewList.add(ObjectUtils.objectToMap(newEntity));
+                            idsVerifies.add(newEntityId);
+                        }
+                    }
+
+                    if (innerAtLeastOneDiff) {
+                        atLeastOneDiff = true;
+                        outputOldMap.put(field.getName(), outputOldList);
+                        outputNewMap.put(field.getName(), outputNewList);
+                    }
+                } else if (ReflectionUtils.isEntity(oldV.getClass()) || ReflectionUtils.isEntity(newV.getClass())) {
+                    MapDiff innerDiff = innerGetEntityDiff(oldV, newV);
+
+                    if (innerDiff.isHasDiff()) {
+                        atLeastOneDiff = true;
+                        outputOldMap.put(field.getName(), innerDiff.getOldMap());
+                        outputNewMap.put(field.getName(), innerDiff.getNewMap());
+                    }
+                } else if (!oldV.equals(newV)) {
+                    atLeastOneDiff = true;
+                    outputOldMap.put(field.getName(), oldV);
+                    outputNewMap.put(field.getName(), newV);
+                }
+            }
+        }
+
+        return new MapDiff(outputOldMap, outputNewMap, atLeastOneDiff);
 	}
 	
 }
