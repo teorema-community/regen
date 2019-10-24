@@ -23,6 +23,7 @@ public class Condition {
 	private List<OrderBy> orderBies;
 	private List<Case> cases;
 	private Boolean distinct = false;
+	private Boolean not = false;
 	
 	public Condition() {}
 	
@@ -241,6 +242,14 @@ public class Condition {
 
 	public void setDistinct(Boolean distinct) {
 		this.distinct = distinct;
+	}
+
+	public Boolean getNot() {
+		return not;
+	}
+
+	public void setNot(Boolean not) {
+		this.not = not;
 	}
 	
 }

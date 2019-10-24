@@ -13,6 +13,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("serial")
 public class GenericSpecification<T> implements Specification<T> {
@@ -86,9 +87,15 @@ public class GenericSpecification<T> implements Specification<T> {
 				value = fieldExpression.getFieldType().getDeclaredMethod("valueOf", String.class).invoke(null, value.toString());
 			}
 
-			predicates.add(createPredicate(
+			Predicate predicate = createPredicate(
 				fieldExpression, condition.getConditionalOperator(), value, isValueExpression, criteriaBuilder
-			));
+			);
+			
+			if (condition.getNot() != null && condition.getNot()) {
+				predicate = criteriaBuilder.not(predicate);
+			}
+			
+			predicates.add(predicate);
 		}
 
 		if (last && logicalOperator != null) {
@@ -186,7 +193,12 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.like(fieldExpression.getExpression(), value.toString());
 				}
 			case BETWEEN:
-				List<Object> values = (List<Object>) value;
+				List<Object> values = null;
+				if (value instanceof String) {
+					values = Arrays.asList(value.toString().split(",")).stream().map(v -> v.trim()).collect(Collectors.toList());
+				} else {
+					values = (List<Object>) value;
+				}
 
 				if (fieldExpression.getFieldType().equals(Date.class)) {
 					return criteriaBuilder.between(
@@ -205,10 +217,15 @@ public class GenericSpecification<T> implements Specification<T> {
 				}
 			case IN:
 				List<Object> newList = new ArrayList<Object>();
-				List<Object> valueList = Arrays.asList(value.toString().split(","));
+				List<Object> valueList = null;
+				if (value instanceof String) {
+					valueList = Arrays.asList(value.toString().split(",")).stream().map(v -> v.trim()).collect(Collectors.toList());
+				} else {
+					valueList = (List<Object>) value;
+				}
 
 				for (Object v : valueList) {
-					Object newValue = v.toString().trim();
+					Object newValue = v;
 
 					if (fieldExpression.getFieldType().equals(Date.class)) {
 						newValue = DateUtils.parseDate(newValue.toString());
