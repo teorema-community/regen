@@ -211,7 +211,12 @@ public class GenericSpecification<T> implements Specification<T> {
 				}
 			case IN:
 				List<Object> newList = new ArrayList<Object>();
-				List<Object> valueList = (List<Object>) value;
+				List<Object> valueList = null;
+				if (value instanceof String) {
+					valueList = Arrays.asList(value.toString().split(","));
+				} else {
+					valueList = (List<Object>) value;
+				}
 
 				for (Object v : valueList) {
 					Object newValue = v.toString().trim();
