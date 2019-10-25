@@ -11,6 +11,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -728,6 +729,9 @@ public class ReflectionUtils {
                 atLeastOneDiff = true;
                 outputOldMap.put(field.getName(), ObjectUtils.objectToMap(oldV));
             } else if (oldV != null && newV != null) {
+            	oldV = getTimeIfDate(oldV);
+                newV = getTimeIfDate(newV);
+                
                 if (ReflectionUtils.isOrExtendsIterable(oldV.getClass()) || ReflectionUtils.isOrExtendsIterable(newV.getClass())) {
                     List<Object> intputOldList = (List<Object>) oldV;
                     List<Object> intputNewList = (List<Object>) newV;
@@ -812,5 +816,19 @@ public class ReflectionUtils {
 
         return new MapDiff(outputOldMap, outputNewMap, atLeastOneDiff);
 	}
+	
+	public static Object getTimeIfDate(Object obj) {
+        if (obj != null) {
+            if (obj.getClass().equals(Date.class)) {
+                return ((Date) obj).getTime();
+            } else if (obj.getClass().equals(java.sql.Date.class)) {
+                return ((java.sql.Date) obj).getTime();
+            } else if (obj.getClass().equals(Timestamp.class)) {
+                return ((Timestamp) obj).getTime();
+            }
+        }
+
+        return obj;
+    }
 	
 }
