@@ -724,10 +724,10 @@ public class ReflectionUtils {
 
             if (oldV == null && newV != null) {
                 atLeastOneDiff = true;
-                outputNewMap.put(field.getName(), ObjectUtils.objectToMap(newV));
+                outputNewMap.put(field.getName(), newV);
             } else if (oldV != null && newV == null) {
                 atLeastOneDiff = true;
-                outputOldMap.put(field.getName(), ObjectUtils.objectToMap(oldV));
+                outputOldMap.put(field.getName(), oldV);
             } else if (oldV != null && newV != null) {
             	oldV = getTimeIfDate(oldV);
                 newV = getTimeIfDate(newV);
