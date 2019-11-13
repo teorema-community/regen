@@ -756,7 +756,7 @@ public class ReflectionUtils {
                             for (Object newEntity : intputNewList) {
                                 Object newEntityId = getFieldValue(newEntity, idFieldName);
 
-                                if (newEntityId.equals(id)) {
+                                if (newEntityId != null && newEntityId.equals(id)) {
                                     found = true;
                                     MapDiff innerDiff = innerGetEntityDiff(oldEntity, newEntity);
 
