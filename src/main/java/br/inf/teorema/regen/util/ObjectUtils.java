@@ -415,5 +415,13 @@ public class ObjectUtils {
 		
 		return map;
 	}
+
+	public static Long getLongOrNull(Object value) {
+		try {
+			return Long.parseLong(String.valueOf(value));
+		} catch (Exception e) {
+			return null;
+		}
+	}
 	
 }
