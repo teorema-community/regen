@@ -83,8 +83,8 @@ public class GenericSpecification<T> implements Specification<T> {
 			if (condition.getExpressionValue() != null) {
 				isValueExpression = true;
 				value = this.getFieldExpressionByField(condition.getExpressionValue(), condition.getJoinType(), condition.getFieldJoins(), root).getExpression();
-			} else if (fieldExpression.getFieldType().isEnum() && value != null && !(value instanceof Enum<?>)) {
-				value = fieldExpression.getFieldType().getDeclaredMethod("valueOf", String.class).invoke(null, value.toString());
+			} else {
+				value = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), value);
 			}
 
 			Predicate predicate = createPredicate(
