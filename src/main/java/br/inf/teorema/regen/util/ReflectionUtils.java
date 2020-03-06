@@ -57,10 +57,10 @@ public class ReflectionUtils {
     	return field.get(obj);
     }
     
-    public static <T> T setFieldValue(T obj, String name, Object value) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
+    public static <T> T setFieldValue(T obj, String name, Object value) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, SecurityException {
     	Field field = getField(obj.getClass(), name);
-    	field.setAccessible(true);
-    	field.set(obj, value);
+    	field.setAccessible(true);    	
+    	field.set(obj, convertValueIfNeeded(field, value));
     	
     	return obj;
     }
@@ -549,7 +549,6 @@ public class ReflectionUtils {
 				entity = setFieldValue(entity, entry.getKey(), newValue);			
 			} else if (ObjectUtils.isOrExtendsIterable(firstFieldClass)) {
 				Class<?> nestedClass = ReflectionUtils.getFieldEntityOrType(firstField);
-				String pkName = ReflectionUtils.getPKField(nestedClass).getName();
 				
 				List<Object> oldList = (List<Object>) getFieldValue(entity, firstField.getName());
 				List<Map<String, Object>> newList = (List<Map<String, Object>>) entry.getValue();
@@ -562,7 +561,6 @@ public class ReflectionUtils {
 						Object newEntity = (Object) ObjectUtils.mapToPojo(newMap, nestedClass);
 						
 						if (getPK(oldEntity).equals(getPK(newEntity))) {
-							newMap.remove(pkName);
 							oldList.set(i, patch(newMap, oldEntity, nestedClass));
 							break;
 						} 
@@ -572,8 +570,6 @@ public class ReflectionUtils {
 				}
 				
 				entity = setFieldValue(entity, entry.getKey(), patchedList);
-			} else if (ReflectionUtils.isId(firstField)) {
-				throw new IllegalArgumentException("Não é permitido alterar chaves primárias. Remova o campo " + firstField.getName());
 			} else {
 				entity = setFieldValue(entity, entry.getKey(), entry.getValue());
 			}
@@ -830,5 +826,35 @@ public class ReflectionUtils {
 
         return obj;
     }
+	
+	public static Object convertValueIfNeeded(Field field, Object value) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {		
+		if (value != null && !value.getClass().equals(field.getType())) {
+			if (field.getType().equals(UUID.class)) {
+				value = UUID.fromString(value.toString());
+			} else if (isOrExtends(field.getType(), Number.class) && !field.getType().equals(Byte.class)) {
+	    		if (field.getType().equals(Integer.class)) {
+	    			value = Integer.parseInt(value.toString());
+	    		} else if (field.getType().equals(Double.class)) {
+	    			value = Double.parseDouble(value.toString());
+	    		} else if (field.getType().equals(Short.class)) {
+	    			value = Short.parseShort(value.toString());
+	    		} else if (field.getType().equals(Float.class)) {
+	    			value = Float.parseFloat(value.toString());
+	    		} else if (field.getType().equals(Long.class)) {
+	    			value = Long.parseLong(value.toString());
+	    		}
+			}
+    	}
+		
+		return convertValueToEnumIfNeeded(field.getType(), value);
+	}
+	
+	public static Object convertValueToEnumIfNeeded(Class<?> fieldType, Object value) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+		if (fieldType.isEnum() && value != null && !(value instanceof Enum<?>)) {
+			value = fieldType.getDeclaredMethod("valueOf", String.class).invoke(null, value.toString());
+		}
+		
+		return value;
+	}
 	
 }
