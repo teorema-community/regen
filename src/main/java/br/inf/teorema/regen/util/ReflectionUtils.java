@@ -538,41 +538,45 @@ public class ReflectionUtils {
 	@SuppressWarnings("unchecked")
 	public static <T> T patch(Map<String, Object> map, T entity, Class<?> clazz) throws IllegalAccessException, InvocationTargetException, NoSuchFieldException, 
 			SecurityException, NoSuchMethodException {
-		for (Entry<String, Object> entry: map.entrySet()) {
-			Field firstField = ReflectionUtils.getFirstField(entry.getKey(), clazz);
-			Class<?> firstFieldClass = firstField.getType();
-			
-			if (ReflectionUtils.isEntity(firstFieldClass)) {
-				Map<String, Object> nestedMap = (Map<String, Object>) entry.getValue();				
-				Object oldValue = getFieldValue(entity, firstField.getName());
-				Object newValue = patch(nestedMap, oldValue, firstFieldClass);
-				entity = setFieldValue(entity, entry.getKey(), newValue);			
-			} else if (ObjectUtils.isOrExtendsIterable(firstFieldClass)) {
-				Class<?> nestedClass = ReflectionUtils.getFieldEntityOrType(firstField);
+		if (map != null) {
+			for (Entry<String, Object> entry: map.entrySet()) {
+				Field firstField = ReflectionUtils.getFirstField(entry.getKey(), clazz);
+				Class<?> firstFieldClass = firstField.getType();
 				
-				List<Object> oldList = (List<Object>) getFieldValue(entity, firstField.getName());
-				List<Map<String, Object>> newList = (List<Map<String, Object>>) entry.getValue();
-				List<Object> patchedList = oldList;
-				
-				for (Map<String, Object> newMap: newList) {
+				if (ReflectionUtils.isEntity(firstFieldClass)) {
+					Map<String, Object> nestedMap = (Map<String, Object>) entry.getValue();				
+					Object oldValue = getFieldValue(entity, firstField.getName());
+					Object newValue = patch(nestedMap, oldValue, firstFieldClass);
+					entity = setFieldValue(entity, entry.getKey(), newValue);			
+				} else if (ObjectUtils.isOrExtendsIterable(firstFieldClass)) {
+					Class<?> nestedClass = ReflectionUtils.getFieldEntityOrType(firstField);
 					
-					int i = 0;
-					for (Object oldEntity: oldList) {
-						Object newEntity = (Object) ObjectUtils.mapToPojo(newMap, nestedClass);
+					List<Object> oldList = (List<Object>) getFieldValue(entity, firstField.getName());
+					List<Map<String, Object>> newList = (List<Map<String, Object>>) entry.getValue();
+					List<Object> patchedList = oldList;
+					
+					for (Map<String, Object> newMap: newList) {
 						
-						if (getPK(oldEntity).equals(getPK(newEntity))) {
-							oldList.set(i, patch(newMap, oldEntity, nestedClass));
-							break;
-						} 
-						
-						i++;
+						int i = 0;
+						for (Object oldEntity: oldList) {
+							Object newEntity = (Object) ObjectUtils.mapToPojo(newMap, nestedClass);
+							
+							if (getPK(oldEntity).equals(getPK(newEntity))) {
+								oldList.set(i, patch(newMap, oldEntity, nestedClass));
+								break;
+							} 
+							
+							i++;
+						}
 					}
+					
+					entity = setFieldValue(entity, entry.getKey(), patchedList);
+				} else {
+					entity = setFieldValue(entity, entry.getKey(), entry.getValue());
 				}
-				
-				entity = setFieldValue(entity, entry.getKey(), patchedList);
-			} else {
-				entity = setFieldValue(entity, entry.getKey(), entry.getValue());
 			}
+		} else {
+			return null;
 		}
 		
 		return entity;
