@@ -12,6 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.sql.Timestamp;
+import java.text.ParseException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -57,7 +58,7 @@ public class ReflectionUtils {
     	return field.get(obj);
     }
     
-    public static <T> T setFieldValue(T obj, String name, Object value) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, SecurityException {
+    public static <T> T setFieldValue(T obj, String name, Object value) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, InvocationTargetException, NoSuchMethodException, SecurityException, ParseException {
     	Field field = getField(obj.getClass(), name);
     	field.setAccessible(true);    	
     	field.set(obj, convertValueIfNeeded(field, value));
@@ -537,7 +538,7 @@ public class ReflectionUtils {
 	
 	@SuppressWarnings("unchecked")
 	public static <T> T patch(Map<String, Object> map, T entity, Class<?> clazz) throws IllegalAccessException, InvocationTargetException, NoSuchFieldException, 
-			SecurityException, NoSuchMethodException {
+			SecurityException, NoSuchMethodException, IllegalArgumentException, ParseException {
 		if (map != null) {
 			for (Entry<String, Object> entry: map.entrySet()) {
 				Field firstField = ReflectionUtils.getFirstField(entry.getKey(), clazz);
@@ -831,22 +832,18 @@ public class ReflectionUtils {
         return obj;
     }
 	
-	public static Object convertValueIfNeeded(Field field, Object value) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {		
+	public static Object convertValueIfNeeded(Field field, Object value) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ParseException {		
 		if (value != null && !value.getClass().equals(field.getType())) {
 			if (field.getType().equals(UUID.class)) {
 				value = UUID.fromString(value.toString());
-			} else if (isOrExtends(field.getType(), Number.class) && !field.getType().equals(Byte.class)) {
-	    		if (field.getType().equals(Integer.class)) {
-	    			value = Integer.parseInt(value.toString());
-	    		} else if (field.getType().equals(Double.class)) {
-	    			value = Double.parseDouble(value.toString());
-	    		} else if (field.getType().equals(Short.class)) {
-	    			value = Short.parseShort(value.toString());
-	    		} else if (field.getType().equals(Float.class)) {
-	    			value = Float.parseFloat(value.toString());
-	    		} else if (field.getType().equals(Long.class)) {
-	    			value = Long.parseLong(value.toString());
-	    		}
+			} else if (isOrExtends(field.getType(), Number.class)) {
+	    		value = ObjectUtils.parseNumber(field.getType(), value);
+			} else if (field.getType().equals(Date.class) && !value.toString().isEmpty()) {
+				if (field.getType().equals(String.class)) {
+					value = DateUtils.parseDate(value.toString());
+				} else if (isOrExtends(value.getClass(), Number.class)) {
+					value = new Date(Long.parseLong(value.toString()));
+				}
 			}
     	}
 		

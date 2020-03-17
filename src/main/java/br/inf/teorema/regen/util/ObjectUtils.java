@@ -424,4 +424,24 @@ public class ObjectUtils {
 		}
 	}
 	
+	public static Object parseNumber(Class<?> clazz, Object value) {
+		if (value != null) {
+			if (clazz.equals(Integer.class)) {
+    			return Integer.parseInt(value.toString());
+    		} else if (clazz.equals(Double.class)) {
+    			return Double.parseDouble(value.toString());
+    		} else if (clazz.equals(Short.class)) {
+    			return Short.parseShort(value.toString());
+    		} else if (clazz.equals(Float.class)) {
+    			return Float.parseFloat(value.toString());
+    		} else if (clazz.equals(Long.class)) {
+    			return Long.parseLong(value.toString());
+    		} else if (clazz.equals(Byte.class)) {
+    			return Byte.parseByte(value.toString());
+    		}
+		}
+		
+		return null;
+	}
+	
 }
