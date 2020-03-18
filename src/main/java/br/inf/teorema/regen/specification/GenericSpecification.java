@@ -117,6 +117,8 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.equal(fieldExpression.getExpression(), DateUtils.getDateValue(value));
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.equal(fieldExpression.getExpression(), UUID.fromString(value.toString()));
+				} else if (isValueExpression) {
+					return criteriaBuilder.equal(fieldExpression.getExpression(), (Expression) value);
 				} else {
 					return criteriaBuilder.equal(fieldExpression.getExpression(), value);
 				}
@@ -125,6 +127,8 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.notEqual(fieldExpression.getExpression(), DateUtils.getDateValue(value));
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.notEqual(fieldExpression.getExpression(), UUID.fromString(value.toString()));
+				} else if (isValueExpression) {
+					return criteriaBuilder.notEqual(fieldExpression.getExpression(), (Expression) value);
 				} else {
 					return criteriaBuilder.notEqual(fieldExpression.getExpression(), value);
 				}
