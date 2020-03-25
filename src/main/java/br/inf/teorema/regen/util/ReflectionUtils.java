@@ -554,24 +554,34 @@ public class ReflectionUtils {
 					
 					List<Object> oldList = (List<Object>) getFieldValue(entity, firstField.getName());
 					List<Map<String, Object>> newList = (List<Map<String, Object>>) entry.getValue();
-					List<Object> patchedList = oldList;
 					
-					for (Map<String, Object> newMap: newList) {
+					for (Map<String, Object> newMap: newList) {		
+						Object newEntity = (Object) ObjectUtils.mapToPojo(newMap, nestedClass);
+						Object newEntityPK = getPK(newEntity);
 						
-						int i = 0;
-						for (Object oldEntity: oldList) {
-							Object newEntity = (Object) ObjectUtils.mapToPojo(newMap, nestedClass);
+						if (newEntityPK == null) {
+							oldList.add(newEntity);
+						} else {
+							boolean found = false;
 							
-							if (getPK(oldEntity).equals(getPK(newEntity))) {
-								oldList.set(i, patch(newMap, oldEntity, nestedClass));
-								break;
-							} 
+							int i = 0;
+							for (Object oldEntity: oldList) {							
+								if (getPK(oldEntity).equals(newEntityPK)) {
+									oldList.set(i, patch(newMap, oldEntity, nestedClass));
+									found = true;
+									break;
+								} 
+								
+								i++;
+							}
 							
-							i++;
+							if (!found) {
+								oldList.add(newEntity);
+							}
 						}
 					}
 					
-					entity = setFieldValue(entity, entry.getKey(), patchedList);
+					entity = setFieldValue(entity, entry.getKey(), oldList);
 				} else {
 					entity = setFieldValue(entity, entry.getKey(), entry.getValue());
 				}
