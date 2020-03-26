@@ -83,8 +83,6 @@ public class GenericSpecification<T> implements Specification<T> {
 			if (condition.getExpressionValue() != null) {
 				isValueExpression = true;
 				value = this.getFieldExpressionByField(condition.getExpressionValue(), condition.getJoinType(), condition.getFieldJoins(), root).getExpression();
-			} else {
-				value = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), value);
 			}
 
 			Predicate predicate = createPredicate(
@@ -110,7 +108,13 @@ public class GenericSpecification<T> implements Specification<T> {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Predicate createPredicate(
 		FieldExpression fieldExpression, ConditionalOperator conditionalOperator, Object value, boolean isValueExpression, CriteriaBuilder criteriaBuilder
-	) throws ParseException {
+	) throws ParseException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+		if (!isValueExpression && !Arrays.asList(new ConditionalOperator[] {
+			ConditionalOperator.BETWEEN, ConditionalOperator.IN
+		}).contains(conditionalOperator)) {
+			value = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), value);
+		}
+		
 		switch (conditionalOperator) {
 			case EQUALS:
 				if (!isValueExpression && fieldExpression.getFieldType().equals(Date.class)) {
@@ -203,6 +207,10 @@ public class GenericSpecification<T> implements Specification<T> {
 				} else {
 					values = (List<Object>) value;
 				}
+				
+				for (Object v : values) {
+					v = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), v);
+				}
 
 				if (fieldExpression.getFieldType().equals(Date.class)) {
 					return criteriaBuilder.between(
@@ -230,6 +238,7 @@ public class GenericSpecification<T> implements Specification<T> {
 
 				for (Object v : valueList) {
 					Object newValue = v;
+					newValue = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), newValue);
 
 					if (fieldExpression.getFieldType().equals(Date.class)) {
 						newValue = DateUtils.getDateValue(newValue);
