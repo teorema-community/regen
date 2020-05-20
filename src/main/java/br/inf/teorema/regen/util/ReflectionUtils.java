@@ -11,6 +11,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.util.*;
@@ -843,16 +844,26 @@ public class ReflectionUtils {
     }
 	
 	public static Object convertValueIfNeeded(Field field, Object value) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ParseException {		
-		if (value != null && !value.getClass().equals(field.getType())) {
+		if (value != null && !value.toString().isEmpty() && !value.getClass().equals(field.getType())) {
 			if (field.getType().equals(UUID.class)) {
 				value = UUID.fromString(value.toString());
 			} else if (isOrExtends(field.getType(), Number.class)) {
 	    		value = ObjectUtils.parseNumber(field.getType(), value);
-			} else if (field.getType().equals(Date.class) && !value.toString().isEmpty()) {
-				if (field.getType().equals(String.class)) {
+			} else if (value.getClass().equals(String.class)) {
+				if (field.getType().equals(Date.class)) {
 					value = DateUtils.parseDate(value.toString());
-				} else if (isOrExtends(value.getClass(), Number.class)) {
+				} else if (field.getType().equals(java.sql.Date.class)) {
+					value = new java.sql.Date(DateUtils.parseDate(value.toString()).getTime());
+				} else if (field.getType().equals(Time.class)) {
+					value = new Time(DateUtils.parseDate(value.toString()).getTime());
+				}
+			} else if (isOrExtends(value.getClass(), Number.class)) {
+				if (field.getType().equals(Date.class)) {
 					value = new Date(Long.parseLong(value.toString()));
+				} else if (field.getType().equals(java.sql.Date.class)) {
+					value = new java.sql.Date(Long.parseLong(value.toString()));
+				} else if (field.getType().equals(Time.class)) {
+					value = new Time(Long.parseLong(value.toString()));
 				}
 			}
     	}
