@@ -539,8 +539,12 @@ public class ReflectionUtils {
 	
 	@SuppressWarnings("unchecked")
 	public static <T> T patch(Map<String, Object> map, T entity, Class<?> clazz) throws IllegalAccessException, InvocationTargetException, NoSuchFieldException, 
-			SecurityException, NoSuchMethodException, IllegalArgumentException, ParseException {
+			SecurityException, NoSuchMethodException, IllegalArgumentException, ParseException, InstantiationException {
 		if (map != null) {
+			if (!map.isEmpty() && entity == null) {
+				entity = (T) clazz.newInstance();
+			}
+			
 			for (Entry<String, Object> entry: map.entrySet()) {
 				Field firstField = ReflectionUtils.getFirstField(entry.getKey(), clazz);
 				Class<?> firstFieldClass = firstField.getType();
