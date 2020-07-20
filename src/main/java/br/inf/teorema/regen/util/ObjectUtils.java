@@ -332,6 +332,10 @@ public class ObjectUtils {
 		return parentClass.isAssignableFrom(childClass);
 	}
 	
+	public static boolean isOrExtendsMap(Class<?> clazz) {
+		return Map.class.isAssignableFrom(clazz);
+	}
+	
 	public static List<String> stringSetToStringList(Set<String> set) {
 		List<String> list = new ArrayList<String>();
 		list.addAll(set);

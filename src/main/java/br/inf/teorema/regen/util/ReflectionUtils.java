@@ -587,6 +587,8 @@ public class ReflectionUtils {
 					}
 					
 					entity = setFieldValue(entity, entry.getKey(), oldList);
+				} else if (entry.getValue() != null && ObjectUtils.isOrExtendsMap(entry.getValue().getClass())) {
+					entity = setFieldValue(entity, entry.getKey(), ObjectUtils.mapToPojo((Map<String, Object>) entry.getValue(), firstFieldClass));
 				} else {
 					entity = setFieldValue(entity, entry.getKey(), entry.getValue());
 				}
