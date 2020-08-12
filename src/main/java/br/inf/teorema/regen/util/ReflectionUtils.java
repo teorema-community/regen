@@ -862,7 +862,9 @@ public class ReflectionUtils {
 	
 	public static Object convertValueIfNeeded(Field field, Object value) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ParseException {		
 		if (value != null && !value.toString().isEmpty() && !value.getClass().equals(field.getType())) {
-			if (field.getType().equals(UUID.class)) {
+			if (field.getType().equals(String.class)) {
+				value = value.toString();
+			} else if (field.getType().equals(UUID.class)) {
 				value = UUID.fromString(value.toString());
 			} else if (isOrExtends(field.getType(), Number.class)) {
 	    		value = ObjectUtils.parseNumber(field.getType(), value);
