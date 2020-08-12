@@ -537,8 +537,13 @@ public class ReflectionUtils {
 		return sb.toString();
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static <T> T patch(Map<String, Object> map, T entity, Class<?> clazz) throws IllegalAccessException, InvocationTargetException, NoSuchFieldException, 
+			SecurityException, NoSuchMethodException, IllegalArgumentException, ParseException, InstantiationException {
+		return patch(map, entity, clazz, false);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> T patch(Map<String, Object> map, T entity, Class<?> clazz, boolean ignoreUnknownFields) throws IllegalAccessException, InvocationTargetException, NoSuchFieldException, 
 			SecurityException, NoSuchMethodException, IllegalArgumentException, ParseException, InstantiationException {
 		if (map != null) {
 			if (!map.isEmpty() && entity == null) {
@@ -546,51 +551,57 @@ public class ReflectionUtils {
 			}
 			
 			for (Entry<String, Object> entry: map.entrySet()) {
-				Field firstField = ReflectionUtils.getFirstField(entry.getKey(), clazz);
-				Class<?> firstFieldClass = firstField.getType();
-				
-				if (ReflectionUtils.isEntity(firstFieldClass)) {
-					Map<String, Object> nestedMap = (Map<String, Object>) entry.getValue();				
-					Object oldValue = getFieldValue(entity, firstField.getName());
-					Object newValue = patch(nestedMap, oldValue, firstFieldClass);
-					entity = setFieldValue(entity, entry.getKey(), newValue);			
-				} else if (ObjectUtils.isOrExtendsIterable(firstFieldClass)) {
-					Class<?> nestedClass = ReflectionUtils.getFieldEntityOrType(firstField);
+				try {
+					Field firstField = ReflectionUtils.getFirstField(entry.getKey(), clazz);
+					Class<?> firstFieldClass = firstField.getType();
 					
-					List<Object> oldList = (List<Object>) getFieldValue(entity, firstField.getName());
-					List<Map<String, Object>> newList = (List<Map<String, Object>>) entry.getValue();
-					
-					for (Map<String, Object> newMap: newList) {		
-						Object newEntity = (Object) ObjectUtils.mapToPojo(newMap, nestedClass);
-						Object newEntityPK = getPK(newEntity);
+					if (ReflectionUtils.isEntity(firstFieldClass)) {
+						Map<String, Object> nestedMap = (Map<String, Object>) entry.getValue();				
+						Object oldValue = getFieldValue(entity, firstField.getName());
+						Object newValue = patch(nestedMap, oldValue, firstFieldClass);
+						entity = setFieldValue(entity, entry.getKey(), newValue);			
+					} else if (ObjectUtils.isOrExtendsIterable(firstFieldClass)) {
+						Class<?> nestedClass = ReflectionUtils.getFieldEntityOrType(firstField);
 						
-						if (newEntityPK == null) {
-							oldList.add(newEntity);
-						} else {
-							boolean found = false;
+						List<Object> oldList = (List<Object>) getFieldValue(entity, firstField.getName());
+						List<Map<String, Object>> newList = (List<Map<String, Object>>) entry.getValue();
+						
+						for (Map<String, Object> newMap: newList) {		
+							Object newEntity = (Object) ObjectUtils.mapToPojo(newMap, nestedClass);
+							Object newEntityPK = getPK(newEntity);
 							
-							int i = 0;
-							for (Object oldEntity: oldList) {							
-								if (getPK(oldEntity).equals(newEntityPK)) {
-									oldList.set(i, patch(newMap, oldEntity, nestedClass));
-									found = true;
-									break;
-								} 
-								
-								i++;
-							}
-							
-							if (!found) {
+							if (newEntityPK == null) {
 								oldList.add(newEntity);
+							} else {
+								boolean found = false;
+								
+								int i = 0;
+								for (Object oldEntity: oldList) {							
+									if (getPK(oldEntity).equals(newEntityPK)) {
+										oldList.set(i, patch(newMap, oldEntity, nestedClass));
+										found = true;
+										break;
+									} 
+									
+									i++;
+								}
+								
+								if (!found) {
+									oldList.add(newEntity);
+								}
 							}
 						}
+						
+						entity = setFieldValue(entity, entry.getKey(), oldList);
+					} else if (entry.getValue() != null && ObjectUtils.isOrExtendsMap(entry.getValue().getClass())) {
+						entity = setFieldValue(entity, entry.getKey(), ObjectUtils.mapToPojo((Map<String, Object>) entry.getValue(), firstFieldClass));
+					} else {
+						entity = setFieldValue(entity, entry.getKey(), entry.getValue());
 					}
-					
-					entity = setFieldValue(entity, entry.getKey(), oldList);
-				} else if (entry.getValue() != null && ObjectUtils.isOrExtendsMap(entry.getValue().getClass())) {
-					entity = setFieldValue(entity, entry.getKey(), ObjectUtils.mapToPojo((Map<String, Object>) entry.getValue(), firstFieldClass));
-				} else {
-					entity = setFieldValue(entity, entry.getKey(), entry.getValue());
+				} catch (NoSuchFieldException nsfe) {
+					if (!ignoreUnknownFields) {
+						throw nsfe;
+					}
 				}
 			}
 		} else {
