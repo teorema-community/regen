@@ -872,9 +872,13 @@ public class ReflectionUtils {
 				if (field.getType().equals(Date.class)) {
 					value = DateUtils.parseDate(value.toString());
 				} else if (field.getType().equals(java.sql.Date.class)) {
-					value = new java.sql.Date(DateUtils.parseDate(value.toString()).getTime());
+					value = new java.sql.Date(
+						((Date) DateUtils.parseDate(value.toString())).getTime()
+					);
 				} else if (field.getType().equals(Time.class)) {
-					value = new Time(DateUtils.parseDate(value.toString()).getTime());
+					value = new Time(
+						((Date) DateUtils.parseDate(value.toString())).getTime()
+					);
 				}
 			} else if (isOrExtends(value.getClass(), Number.class)) {
 				if (field.getType().equals(Date.class)) {

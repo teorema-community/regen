@@ -108,11 +108,15 @@ public class GenericSpecification<T> implements Specification<T> {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Predicate createPredicate(
 		FieldExpression fieldExpression, ConditionalOperator conditionalOperator, Object value, boolean isValueExpression, CriteriaBuilder criteriaBuilder
-	) throws ParseException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
-		if (!isValueExpression && !Arrays.asList(new ConditionalOperator[] {
-			ConditionalOperator.BETWEEN, ConditionalOperator.IN
-		}).contains(conditionalOperator)) {
-			value = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), value);
+	) throws ParseException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {		
+		if (!isValueExpression) {
+			if (!Arrays.asList(new ConditionalOperator[] {
+				ConditionalOperator.BETWEEN, ConditionalOperator.IN
+			}).contains(conditionalOperator)) {
+				value = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), value);
+			} else if (fieldExpression.getFieldType().equals(Date.class)) {
+				value = DateUtils.getDateValue(value);
+			}
 		}
 		
 		switch (conditionalOperator) {
@@ -136,9 +140,9 @@ public class GenericSpecification<T> implements Specification<T> {
 				} else {
 					return criteriaBuilder.notEqual(fieldExpression.getExpression(), value);
 				}
-			case GREATER_THAN:
-				if (!isValueExpression && fieldExpression.getFieldType().equals(Date.class)) {
-					return criteriaBuilder.greaterThan(fieldExpression.getExpression(), DateUtils.getDateValue(value));
+			case GREATER_THAN:				
+				if (!isValueExpression && value.getClass().equals(Date.class)) {
+					return criteriaBuilder.greaterThan(fieldExpression.getExpression(), (Date) value);
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.greaterThan(fieldExpression.getExpression(), UUID.fromString(value.toString()));
 				} else if (isValueExpression) {
@@ -147,8 +151,8 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.greaterThan(fieldExpression.getExpression(), value.toString());
 				}
 			case GREATER_THAN_OR_EQUAL_TO:
-				if (!isValueExpression && fieldExpression.getFieldType().equals(Date.class)) {
-					return criteriaBuilder.greaterThanOrEqualTo(fieldExpression.getExpression(), DateUtils.getDateValue(value));
+				if (!isValueExpression && value.getClass().equals(Date.class)) {
+					return criteriaBuilder.greaterThanOrEqualTo(fieldExpression.getExpression(), (Date) value);
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.greaterThanOrEqualTo(fieldExpression.getExpression(), UUID.fromString(value.toString()));
 				} else if (isValueExpression) {
@@ -157,8 +161,8 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.greaterThanOrEqualTo(fieldExpression.getExpression(), value.toString());
 				}
 			case LESS_THAN:
-				if (!isValueExpression && fieldExpression.getFieldType().equals(Date.class)) {
-					return criteriaBuilder.lessThan(fieldExpression.getExpression(), DateUtils.getDateValue(value));
+				if (!isValueExpression && value.getClass().equals(Date.class)) {
+					return criteriaBuilder.lessThan(fieldExpression.getExpression(), (Date) value);
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.lessThan(fieldExpression.getExpression(), UUID.fromString(value.toString()));
 				} else if (isValueExpression) {
@@ -167,8 +171,8 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.lessThan(fieldExpression.getExpression(), value.toString());
 				}
 			case LESS_THAN_OR_EQUAL_TO:
-				if (!isValueExpression && fieldExpression.getFieldType().equals(Date.class)) {
-					return criteriaBuilder.lessThanOrEqualTo(fieldExpression.getExpression(), DateUtils.getDateValue(value));
+				if (!isValueExpression && value.getClass().equals(Date.class)) {
+					return criteriaBuilder.lessThanOrEqualTo(fieldExpression.getExpression(), (Date) value);
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.lessThanOrEqualTo(fieldExpression.getExpression(), UUID.fromString(value.toString()));
 				} else if (isValueExpression) {
@@ -210,13 +214,17 @@ public class GenericSpecification<T> implements Specification<T> {
 				
 				for (Object v : values) {
 					v = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), v);
-				}
+					
+					if (fieldExpression.getFieldType().equals(Date.class)) {
+						v = DateUtils.getDateValue(values.get(0));
+					}
+				}				
 
-				if (fieldExpression.getFieldType().equals(Date.class)) {
+				if (values.get(0).getClass().equals(Date.class)) {
 					return criteriaBuilder.between(
 							fieldExpression.getExpression(),
-							DateUtils.getDateValue(values.get(0)),
-							DateUtils.getDateValue(values.get(1))
+							(Date) DateUtils.getDateValue(values.get(0)),
+							(Date) DateUtils.getDateValue(values.get(1))
 					);
 				} else if (fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.between(
