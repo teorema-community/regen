@@ -4,6 +4,7 @@ import javax.persistence.criteria.JoinType;
 
 import br.inf.teorema.regen.enums.ConditionalOperator;
 import br.inf.teorema.regen.enums.LogicalOperator;
+import br.inf.teorema.regen.enums.OrderDirection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,6 +88,116 @@ public class Condition {
 		super();
 		this.logicalOperator = logicalOperator;
 		this.addCondition(conditions);
+	}
+	
+	public static Condition isNotNull(String field) {
+		Condition condition = new Condition(field);
+		condition.setConditionalOperator(ConditionalOperator.IS_NOT_NULL);
+		
+		return condition;
+	}
+	
+	public static Condition isNull(String field) {
+		Condition condition = new Condition(field);
+		condition.setConditionalOperator(ConditionalOperator.IS_NULL);
+		condition.setJoinType(JoinType.LEFT);
+		
+		return condition;
+	}
+	
+	public static Condition equals(String field, Object value) {
+		return new Condition(field, ConditionalOperator.EQUALS, value);
+	}
+	
+	public static Condition notEquals(String field, Object value) {
+		return new Condition(field, ConditionalOperator.NOT_EQUALS, value);
+	}
+	
+	public static Condition greaterThan(String field, Object value) {
+		return new Condition(field, ConditionalOperator.GREATER_THAN, value);
+	}
+	
+	public static Condition lessThan(String field, Object value) {
+		return new Condition(field, ConditionalOperator.LESS_THAN, value);
+	}
+	
+	public static Condition greaterThanOrEqualTo(String field, Object value) {
+		return new Condition(field, ConditionalOperator.GREATER_THAN_OR_EQUAL_TO, value);
+	}
+	
+	public static Condition lessThanOrEqualTo(String field, Object value) {
+		return new Condition(field, ConditionalOperator.LESS_THAN_OR_EQUAL_TO, value);
+	}
+	
+	public static Condition like(String field, Object value) {
+		return new Condition(field, ConditionalOperator.LIKE, value);
+	}
+	
+	public static Condition likeStart(String field, Object value) {
+		return new Condition(field, ConditionalOperator.LIKE_START, value);
+	}
+	
+	public static Condition likeEnd(String field, Object value) {
+		return new Condition(field, ConditionalOperator.LIKE_END, value);
+	}
+	
+	public static Condition customLike(String field, Object value) {
+		return new Condition(field, ConditionalOperator.CUSTOM_LIKE, value);
+	}
+	
+	public static Condition between(String field, Object... values) {
+		return new Condition(field, ConditionalOperator.BETWEEN, values);
+	}
+	
+	public static Condition in(String field, Object... values) {
+		return new Condition(field, ConditionalOperator.IN, values);
+	}
+	
+	public Condition leftJoin() {
+		this.setJoinType(JoinType.LEFT);
+		return this;
+	}
+	
+	public Condition innerJoin() {
+		this.setJoinType(JoinType.INNER);
+		return this;
+	}
+	
+	public Condition rightJoin() {
+		this.setJoinType(JoinType.RIGHT);
+		return this;
+	}
+	
+	public Condition distinct() {
+		this.setDistinct(true);
+		return this;
+	}
+	
+	public Condition not() {
+		this.setNot(true);
+		return this;
+	}
+	
+	public Condition groupBy(String field) {
+		this.getGroupBy().add(field);
+		return this;
+	}
+	
+	public Condition orderBy(OrderBy orderBy) {
+		this.getOrderBies().add(orderBy);
+		return this;
+	}
+	
+	public Condition orderBy(OrderDirection direction, Condition condition) {
+		return orderBy(new OrderBy(direction, condition));
+	}
+	
+	public Condition orderBy(OrderDirection direction, String field) {
+		return orderBy(new OrderBy(direction, field));
+	}
+	
+	public Condition orderBy(String field) {
+		return orderBy(new OrderBy(field));
 	}
 
 	public LogicalOperator getLogicalOperator() {
