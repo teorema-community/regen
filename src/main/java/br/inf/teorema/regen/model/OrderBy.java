@@ -7,7 +7,25 @@ public class OrderBy {
     private OrderDirection direction = OrderDirection.ASC;
     private Condition condition;
 
-    public OrderDirection getDirection() {
+    public OrderBy() {
+		super();
+	}
+
+	public OrderBy(OrderDirection direction, Condition condition) {
+		super();
+		this.direction = direction;
+		this.condition = condition;
+	}
+	
+	public OrderBy(OrderDirection direction, String field) {
+		this(direction, new Condition(field));
+	}
+	
+	public OrderBy(String field) {
+		this(OrderDirection.ASC, field);
+	}
+
+	public OrderDirection getDirection() {
         return direction;
     }
 
