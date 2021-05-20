@@ -9,6 +9,7 @@ import br.inf.teorema.regen.util.ReflectionUtils;
 import org.springframework.data.jpa.domain.Specification;
 
 import javax.persistence.criteria.*;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
@@ -40,9 +41,8 @@ public class GenericSpecification<T> implements Specification<T> {
 			return addCondition(this.condition, LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
 		} catch (NoSuchFieldException | ParseException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
 			e.printStackTrace();
+			throw new NullPointerException(e.getClass().getName() + ": " + e.getMessage());
 		}
-
-		return null;
 	}
 
 	private List<Predicate> addCondition(
@@ -109,19 +109,19 @@ public class GenericSpecification<T> implements Specification<T> {
 	private Predicate createPredicate(
 		FieldExpression fieldExpression, ConditionalOperator conditionalOperator, Object value, boolean isValueExpression, CriteriaBuilder criteriaBuilder
 	) throws ParseException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {		
-		if (!isValueExpression) {
-			if (!Arrays.asList(new ConditionalOperator[] {
-				ConditionalOperator.BETWEEN, ConditionalOperator.IN
-			}).contains(conditionalOperator)) {
-				value = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), value);
-			} else if (fieldExpression.getFieldType().equals(Date.class)) {
+		if (!isValueExpression && !Arrays.asList(new ConditionalOperator[] {
+			ConditionalOperator.BETWEEN, ConditionalOperator.IN
+		}).contains(conditionalOperator)) {
+			value = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), value);
+			
+			if (fieldExpression.getFieldType().equals(Date.class)) {
 				value = DateUtils.getDateValue(value);
 			}
 		}
 		
 		switch (conditionalOperator) {
-			case EQUALS:
-				if (!isValueExpression && fieldExpression.getFieldType().equals(Date.class)) {
+			case EQUALS:				
+				if (!isValueExpression && value instanceof Date) {
 					return criteriaBuilder.equal(fieldExpression.getExpression(), DateUtils.getDateValue(value));
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.equal(fieldExpression.getExpression(), UUID.fromString(value.toString()));
@@ -131,7 +131,7 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.equal(fieldExpression.getExpression(), value);
 				}
 			case NOT_EQUALS:
-				if (!isValueExpression && fieldExpression.getFieldType().equals(Date.class)) {
+				if (!isValueExpression && value instanceof Date) {
 					return criteriaBuilder.notEqual(fieldExpression.getExpression(), DateUtils.getDateValue(value));
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.notEqual(fieldExpression.getExpression(), UUID.fromString(value.toString()));
@@ -141,7 +141,7 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.notEqual(fieldExpression.getExpression(), value);
 				}
 			case GREATER_THAN:				
-				if (!isValueExpression && value.getClass().equals(Date.class)) {
+				if (!isValueExpression && value instanceof Date) {
 					return criteriaBuilder.greaterThan(fieldExpression.getExpression(), (Date) value);
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.greaterThan(fieldExpression.getExpression(), UUID.fromString(value.toString()));
@@ -151,7 +151,7 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.greaterThan(fieldExpression.getExpression(), value.toString());
 				}
 			case GREATER_THAN_OR_EQUAL_TO:
-				if (!isValueExpression && value.getClass().equals(Date.class)) {
+				if (!isValueExpression && value instanceof Date) {
 					return criteriaBuilder.greaterThanOrEqualTo(fieldExpression.getExpression(), (Date) value);
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.greaterThanOrEqualTo(fieldExpression.getExpression(), UUID.fromString(value.toString()));
@@ -161,7 +161,7 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.greaterThanOrEqualTo(fieldExpression.getExpression(), value.toString());
 				}
 			case LESS_THAN:
-				if (!isValueExpression && value.getClass().equals(Date.class)) {
+				if (!isValueExpression && value instanceof Date) {
 					return criteriaBuilder.lessThan(fieldExpression.getExpression(), (Date) value);
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.lessThan(fieldExpression.getExpression(), UUID.fromString(value.toString()));
@@ -171,7 +171,7 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.lessThan(fieldExpression.getExpression(), value.toString());
 				}
 			case LESS_THAN_OR_EQUAL_TO:
-				if (!isValueExpression && value.getClass().equals(Date.class)) {
+				if (!isValueExpression && value instanceof Date) {
 					return criteriaBuilder.lessThanOrEqualTo(fieldExpression.getExpression(), (Date) value);
 				} else if (!isValueExpression && fieldExpression.getFieldType().equals(UUID.class)) {
 					return criteriaBuilder.lessThanOrEqualTo(fieldExpression.getExpression(), UUID.fromString(value.toString()));
@@ -181,83 +181,28 @@ public class GenericSpecification<T> implements Specification<T> {
 					return criteriaBuilder.lessThanOrEqualTo(fieldExpression.getExpression(), value.toString());
 				}
 			case LIKE:
-				if (isValueExpression) {
-					return criteriaBuilder.like(fieldExpression.getExpression(), (Expression) value);
-				} else {
-					return criteriaBuilder.like(fieldExpression.getExpression(), "%" + value.toString() + "%");
-				}
 			case LIKE_START:
-				if (isValueExpression) {
-					return criteriaBuilder.like(fieldExpression.getExpression(), (Expression) value);
-				} else {
-					return criteriaBuilder.like(fieldExpression.getExpression(), value.toString() + "%");
-				}
 			case LIKE_END:
-				if (isValueExpression) {
-					return criteriaBuilder.like(fieldExpression.getExpression(), (Expression) value);
-				} else {
-					return criteriaBuilder.like(fieldExpression.getExpression(), "%" + value.toString());
-				}
 			case CUSTOM_LIKE:
 				if (isValueExpression) {
 					return criteriaBuilder.like(fieldExpression.getExpression(), (Expression) value);
 				} else {
-					return criteriaBuilder.like(fieldExpression.getExpression(), value.toString());
+					value = value.toString();
+					
+					if (conditionalOperator.equals(ConditionalOperator.LIKE) || conditionalOperator.equals(ConditionalOperator.LIKE_END)) {
+						value = "%" + value;
+					}
+					
+					if (conditionalOperator.equals(ConditionalOperator.LIKE) || conditionalOperator.equals(ConditionalOperator.LIKE_START)) {
+						value = value + "%";
+					}
+					
+					return criteriaBuilder.like(fieldExpression.getExpression(), (String) value);
 				}
 			case BETWEEN:
-				List<Object> values = null;
-				if (value instanceof String) {
-					values = Arrays.asList(value.toString().split(",")).stream().map(v -> v.trim()).collect(Collectors.toList());
-				} else {
-					values = (List<Object>) value;
-				}
-				
-				for (Object v : values) {
-					v = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), v);
-					
-					if (fieldExpression.getFieldType().equals(Date.class)) {
-						v = DateUtils.getDateValue(values.get(0));
-					}
-				}				
-
-				if (values.get(0).getClass().equals(Date.class)) {
-					return criteriaBuilder.between(
-							fieldExpression.getExpression(),
-							(Date) DateUtils.getDateValue(values.get(0)),
-							(Date) DateUtils.getDateValue(values.get(1))
-					);
-				} else if (fieldExpression.getFieldType().equals(UUID.class)) {
-					return criteriaBuilder.between(
-							fieldExpression.getExpression(),
-							UUID.fromString(values.get(0).toString()),
-							UUID.fromString(values.get(1).toString())
-					);
-				} else {
-					return criteriaBuilder.between(fieldExpression.getExpression(), values.get(0).toString(), values.get(1).toString());
-				}
+				return createBetweenPredicate(fieldExpression, value, criteriaBuilder);
 			case IN:
-				List<Object> newList = new ArrayList<Object>();
-				List<Object> valueList = null;
-				if (value instanceof String) {
-					valueList = Arrays.asList(value.toString().split(",")).stream().map(v -> v.trim()).collect(Collectors.toList());
-				} else {
-					valueList = (List<Object>) value;
-				}
-
-				for (Object v : valueList) {
-					Object newValue = v;
-					newValue = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), newValue);
-
-					if (fieldExpression.getFieldType().equals(Date.class)) {
-						newValue = DateUtils.getDateValue(newValue);
-					} else if (fieldExpression.getFieldType().equals(UUID.class)) {
-						newValue = UUID.fromString(newValue.toString());
-					}
-
-					newList.add(newValue);
-				}
-
-				return fieldExpression.getExpression().in(newList);
+				return fieldExpression.getExpression().in(convertValueToList(fieldExpression, value, false));
 			case IS_NULL:
 				return criteriaBuilder.isNull(fieldExpression.getExpression());
 			case IS_NOT_NULL:
@@ -267,6 +212,56 @@ public class GenericSpecification<T> implements Specification<T> {
 		}
 
 		return null;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private Predicate createBetweenPredicate(FieldExpression fieldExpression, Object value, CriteriaBuilder criteriaBuilder) 
+		throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+		List<Object> values = convertValueToList(fieldExpression, value, true);
+		
+		if (values.get(0) instanceof Date) {
+            return criteriaBuilder.between(
+                            fieldExpression.getExpression(),
+                            (Date) values.get(0),
+                            (Date) values.get(1)
+            );
+	    } else if (fieldExpression.getFieldType().equals(UUID.class)) {
+            return criteriaBuilder.between(
+                            fieldExpression.getExpression(),
+                            (UUID) values.get(0),
+                            (UUID) values.get(1)
+            );
+	    } else {
+            return criteriaBuilder.between(fieldExpression.getExpression(), values.get(0).toString(), values.get(1).toString());
+	    }
+	}
+	
+	@SuppressWarnings("unchecked")
+	private List<Object> convertValueToList(FieldExpression fieldExpression, Object value, boolean convertToStringOnElse) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+		List<Object> newList = new ArrayList<Object>();
+		List<Object> valueList = null;
+		if (value instanceof String) {
+			valueList = Arrays.asList(value.toString().split(",")).stream().map(v -> v.trim()).collect(Collectors.toList());
+		} else {
+			valueList = (List<Object>) value;
+		}
+
+		for (Object v : valueList) {
+			Object newValue = v;
+			newValue = ReflectionUtils.convertValueToEnumIfNeeded(fieldExpression.getFieldType(), newValue);
+
+			if (fieldExpression.getFieldType().equals(Date.class)) {
+				newValue = DateUtils.getDateValue(newValue);
+			} else if (fieldExpression.getFieldType().equals(UUID.class)) {
+				newValue = UUID.fromString(newValue.toString());
+			} else if (convertToStringOnElse) {
+				newValue = newValue.toString();
+			}
+
+			newList.add(newValue);
+		}
+		
+		return newList;
 	}
 
 	private Predicate joinPredicates(List<Predicate> predicates, LogicalOperator logicalOperator, CriteriaBuilder criteriaBuilder) {

@@ -404,7 +404,7 @@ public class ObjectUtils {
 		if (keyList != null) {
 			if (keyList.size() != valueList.size()) {
 				throw new IllegalArgumentException(
-					"Ambas as listas precisam conter o mesmo tamanho"
+					"Both list have to be of the same size"
 				);
 			}
 			
