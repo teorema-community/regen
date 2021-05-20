@@ -202,7 +202,7 @@ public class GenericSpecification<T> implements Specification<T> {
 			case BETWEEN:
 				return createBetweenPredicate(fieldExpression, value, criteriaBuilder);
 			case IN:
-				return createInPredicate(fieldExpression, value, criteriaBuilder);
+				return fieldExpression.getExpression().in(convertValueToList(fieldExpression, value, false));
 			case IS_NULL:
 				return criteriaBuilder.isNull(fieldExpression.getExpression());
 			case IS_NOT_NULL:
@@ -234,12 +234,6 @@ public class GenericSpecification<T> implements Specification<T> {
 	    } else {
             return criteriaBuilder.between(fieldExpression.getExpression(), values.get(0).toString(), values.get(1).toString());
 	    }
-	}
-	
-	@SuppressWarnings("unchecked")
-	private Predicate createInPredicate(FieldExpression fieldExpression, Object value, CriteriaBuilder criteriaBuilder) 
-		throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
-		return fieldExpression.getExpression().in(convertValueToList(fieldExpression, value, false));
 	}
 	
 	@SuppressWarnings("unchecked")
