@@ -12,7 +12,7 @@ public class DateUtils {
 		try {
 			return new SimpleDateFormat(DEFAULT_JSON_FORMAT).parse(str);
 		} catch (ParseException e) {
-			System.out.println("Campo " + str + " não está em formato JSON");
+			System.out.println("Campo " + str + " não está em formato JSON: " + DEFAULT_JSON_FORMAT);
 			return str;
 		}
 	}
