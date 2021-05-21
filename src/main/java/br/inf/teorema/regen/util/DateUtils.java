@@ -10,7 +10,11 @@ public class DateUtils {
 	
 	public static Object parseDate(String str) {
 		try {
-			return new SimpleDateFormat(DEFAULT_JSON_FORMAT).parse(str);
+			if (str != null && !str.isEmpty()) {
+				return new SimpleDateFormat(DEFAULT_JSON_FORMAT).parse(str);
+			} else {
+				return null;
+			}
 		} catch (ParseException e) {
 			System.out.println("Campo " + str + " não está em formato JSON: " + DEFAULT_JSON_FORMAT);
 			return str;
