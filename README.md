@@ -10,14 +10,14 @@ mvn clean install
 Get the jar file generated in the target folder and import it in your project.
 
 ## Usage
-To use regen's generic specification you can instantiate a ConditionMediator and call any of it's methods passing a condition instance:
+To use regen's generic specification you can instantiate a ConditionFacade and call any of it's methods passing a condition instance:
 ```java
-    ConditionMediator<YourModel> mediator = new ConditionMediator<YourModel>();
-    List<YourModel> yourList = mediator.findAllByCondition(
+    ConditionFacade<YourModel> facade = new ConditionFacade<YourModel>();
+    List<YourModel> yourList = facade.findAllByCondition(
         new Condition(), yourModelRepository, YourModel.class
     );
 ```
-ConditionMediator has three basic methods: 
+ConditionFacade has three basic methods: 
 ```java
     public Page<T> findAllByCondition(
         Condition condition, Pageable pageable, JpaSpecificationExecutor<T> executor, Class<T> clazz

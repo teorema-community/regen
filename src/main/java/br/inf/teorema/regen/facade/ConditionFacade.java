@@ -1,4 +1,4 @@
-package br.inf.teorema.regen.mediator;
+package br.inf.teorema.regen.facade;
 
 import br.inf.teorema.regen.model.Condition;
 import br.inf.teorema.regen.model.SelectAndWhere;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class ConditionMediator<T> {
+public class ConditionFacade<T> {
 
     public Page<T> findAllByCondition(Condition condition, Pageable pageable, JpaSpecificationExecutor<T> executor, Class<T> clazz) {
         return executor.findAll(new GenericSpecification<T>(condition, clazz), pageable);
