@@ -10,5 +10,5 @@ import java.util.List;
 import java.util.Map;
 
 public interface GenericProjectionRepository<T> {
-    public Page<Map<String, Object>> findAllBySpecificationAndProjections(Specification<T> specification, SelectAndWhere selectAndWhere, Pageable pageable, Class<T> clazz) throws NoSuchFieldException;
+    public Page<Map<String, Object>> findAllBySpecificationAndProjections(SelectAndWhere selectAndWhere, Pageable pageable, Class<T> clazz) throws NoSuchFieldException;
 }

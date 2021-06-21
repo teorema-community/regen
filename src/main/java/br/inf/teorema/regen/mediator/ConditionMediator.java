@@ -41,12 +41,7 @@ public class ConditionMediator<T> {
         GenericProjectionRepository<T> projectionRepository,
         Class<T> clazz
     ) throws NoSuchFieldException {
-        Specification<T> specification = null;
-        if (selectAndWhere.getWhere() != null) {
-            specification = new GenericSpecification<T>(selectAndWhere.getWhere(), clazz);
-        }
-
-        return projectionRepository.findAllBySpecificationAndProjections(specification, selectAndWhere, pageable, clazz);
+        return projectionRepository.findAllBySpecificationAndProjections(selectAndWhere, pageable, clazz);
     }
 
     public List<Map<String, Object>> findAllBySelectAndWhere(
@@ -62,14 +57,7 @@ public class ConditionMediator<T> {
             GenericProjectionRepository<T> projectionRepository,
             Class<T> clazz
     ) throws NoSuchFieldException {
-        Specification<T> specification = null;
-        if (selectAndWhere.getWhere() != null) {
-            specification = new GenericSpecification<T>(selectAndWhere.getWhere(), clazz);
-        }
-
-        List<Map<String, Object>> results = projectionRepository.findAllBySpecificationAndProjections(
-            specification, selectAndWhere, new PageRequest(0, 1), clazz
-        ).getContent();
+        List<Map<String, Object>> results = projectionRepository.findAllBySpecificationAndProjections(selectAndWhere, new PageRequest(0, 1), clazz).getContent();
 
         if (results.isEmpty()) {
             return Optional.empty();

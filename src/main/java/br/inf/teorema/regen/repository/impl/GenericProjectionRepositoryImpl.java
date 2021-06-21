@@ -3,6 +3,7 @@ package br.inf.teorema.regen.repository.impl;
 import br.inf.teorema.regen.model.Condition;
 import br.inf.teorema.regen.model.SelectAndWhere;
 import br.inf.teorema.regen.repository.GenericProjectionRepository;
+import br.inf.teorema.regen.specification.GenericSpecification;
 import br.inf.teorema.regen.util.ObjectUtils;
 import br.inf.teorema.regen.util.ReflectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,18 +38,30 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
     public GenericProjectionRepositoryImpl() {}
 
     @Override
-    public Page<Map<String, Object>> findAllBySpecificationAndProjections(Specification<T> specification, SelectAndWhere selectAndWhere, Pageable pageable, Class<T> clazz) throws NoSuchFieldException {
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+    public Page<Map<String, Object>> findAllBySpecificationAndProjections(SelectAndWhere selectAndWhere, Pageable pageable, Class<T> clazz) throws NoSuchFieldException {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();        
 
         CriteriaQuery<Long> countQuery = criteriaBuilder.createQuery(Long.class);
         Root<T> root = countQuery.from(clazz);
+        
+        Specification<T> specification = null;
+        List<String> groupBy = null;
+        
+        if (selectAndWhere.getWhere() != null) {
+        	groupBy = selectAndWhere.getWhere().getGroupBy();
+        	selectAndWhere.getWhere().setGroupBy(null);
+        	specification = new GenericSpecification<>(selectAndWhere.getWhere(), clazz);
+        }
+        
         Long count = count(criteriaBuilder, countQuery, specification, root, selectAndWhere.getWhere().getDistinct());
 
         CriteriaQuery<Tuple> tupleQuery = criteriaBuilder.createTupleQuery();
         root = tupleQuery.from(clazz);
         tupleQuery = applyProjection(tupleQuery, root, selectAndWhere.getSelect(), clazz);
 
-        if (specification != null) {
+        if (selectAndWhere.getWhere() != null) {
+        	selectAndWhere.getWhere().setGroupBy(groupBy);
+        	specification = new GenericSpecification<>(selectAndWhere.getWhere(), clazz);
             tupleQuery.where(specification.toPredicate(root, tupleQuery, criteriaBuilder));
         }
 
