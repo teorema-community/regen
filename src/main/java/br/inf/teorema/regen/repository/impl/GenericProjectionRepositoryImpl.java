@@ -3,6 +3,7 @@ package br.inf.teorema.regen.repository.impl;
 import br.inf.teorema.regen.model.Condition;
 import br.inf.teorema.regen.model.SelectAndWhere;
 import br.inf.teorema.regen.repository.GenericProjectionRepository;
+import br.inf.teorema.regen.util.ObjectUtils;
 import br.inf.teorema.regen.util.ReflectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -156,13 +157,18 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
                             lastMap = newMap;
                         }
                     } else {
-                        lastMap.put(fieldName, tuple.get(projection, field.getType()));
+                    	Object value = tuple.get(projection, field.getType());
+                    	
+                    	if (value != null) {
+                    		lastMap.put(fieldName, value);
+                    	}
                     }
 
                     i++;
                 }
             }
 
+            map = ObjectUtils.removeNullAndEmptyValues(map);
             entities.add(map);
         }
 

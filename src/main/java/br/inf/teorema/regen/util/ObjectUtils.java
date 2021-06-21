@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.Map.Entry;
 
 public class ObjectUtils {
 
@@ -446,6 +447,49 @@ public class ObjectUtils {
 		}
 		
 		return null;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static Map<String, Object> removeNullAndEmptyValues(Map<String, Object> map) {
+		if (map != null) {
+			Map<String, Object> newMap = new HashMap<String, Object>();
+			
+			for (Entry<String, Object> entry : map.entrySet()) {
+				if (entry.getValue() != null) {
+					if (isOrExtendsMap(entry.getValue().getClass())) {
+						Map<String, Object> child = removeNullAndEmptyValues((Map<String, Object>) entry.getValue());
+						
+						if (!child.isEmpty()) {
+							newMap.put(entry.getKey(), child);
+						}
+					} else {
+						newMap.put(entry.getKey(), entry.getValue());
+					}
+				}
+			}
+			
+			return newMap;
+		}
+		
+		return map;
+	}
+	
+	public static void main(String[] args) {
+		Map<String, Object> map = new HashMap<String, Object>() {{
+			put("a", 1);
+			put("b", null);
+			put("c", new HashMap<>());
+			put("d", new HashMap<String, Object>() {{
+				put("e", null);
+			}});
+			put("f", new HashMap<String, Object>() {{
+				put("g", new HashMap<>());
+			}});
+			put("h", new HashMap<String, Object>() {{
+				put("i", 2);
+			}});
+		}};
+		System.out.println(removeNullAndEmptyValues(map));
 	}
 	
 }
