@@ -14,6 +14,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.*;
@@ -69,7 +70,11 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
             countQuery.where(specification.toPredicate(root, countQuery, criteriaBuilder));
         }
 
-        return entityManager.createQuery(countQuery).getSingleResult();
+        try {
+        	return entityManager.createQuery(countQuery).getSingleResult();
+        } catch (NoResultException e) {
+        	return 0l;
+        }
     }
 
     public List<Tuple> paginate(CriteriaQuery<Tuple> tupleQuery, Pageable pageable) {
