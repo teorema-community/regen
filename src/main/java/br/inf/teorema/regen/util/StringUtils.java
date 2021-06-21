@@ -3,6 +3,8 @@ package br.inf.teorema.regen.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import br.inf.teorema.regen.model.FunctionField;
+
 import java.text.Normalizer;
 
 public class StringUtils {
