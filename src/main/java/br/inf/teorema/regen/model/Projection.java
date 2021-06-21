@@ -3,17 +3,17 @@ package br.inf.teorema.regen.model;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Selection;
 
 import org.apache.commons.lang3.NotImplementedException;
 
 import br.inf.teorema.regen.enums.Function;
 
-public class Projection {
+public class Projection<N> {
 
 	private String originalName;
 	private String name;
@@ -39,7 +39,7 @@ public class Projection {
 			String funStr = name.substring(0, name.indexOf("("));
 			this.function = Function.valueOf(funStr.toUpperCase());
 			this.name = name.substring(name.indexOf("(") + 1, name.lastIndexOf(")"));
-			this.parameters = Arrays.asList(name.split(","));
+			this.parameters = Arrays.asList(name.split(",")).stream().map(p -> p.trim()).collect(Collectors.toList());
 		}
 	}
 	
@@ -96,45 +96,33 @@ public class Projection {
 		this.expression = createFunctionExpression(criteriaBuilder, root, subProjections);		
 	}
 	
+	@SuppressWarnings("unchecked")
 	private <T> Expression<?> createFunctionExpression(CriteriaBuilder criteriaBuilder, Root<T> root, List<Projection> subProjections) {
 		if (hasFunction()) {
 			switch (function) {
-				case ABS:
-					break;
-				case AVG:
-					break;
-				case COUNT:
-					return criteriaBuilder.count(subProjections.get(0).getExpression());
-				case COUNT_DISCTINT:
-					break;
-				case DIFF:
-					break;
-				case LOWER:
-					break;
-				case MAX:
-					break;
-				case MIN:
-					break;
-				case MOD:
-					break;
-				case NEG:
-					break;
-				case PROD:
-					break;
-				case QUOT:
-					break;
-				case SQRT:
-					break;
-				case SUBSTRING:
-					break;
-				case SUM:
-					break;
-				case TRIM:
-					break;
-				case UPPER:
-					break;
-				default:
-					break;		
+				case ABS: return criteriaBuilder.abs(subProjections.get(0).getExpression());
+				case AVG: return criteriaBuilder.avg(subProjections.get(0).getExpression());
+				case COUNT:	return criteriaBuilder.count(subProjections.get(0).getExpression());
+				case COUNT_DISCTINT: return criteriaBuilder.countDistinct(subProjections.get(0).getExpression());
+				case DIFF: return criteriaBuilder.diff(subProjections.get(0).getExpression(), subProjections.get(1).getExpression());
+				case LOWER: return criteriaBuilder.lower(subProjections.get(0).getExpression());
+				case MAX: return criteriaBuilder.max(subProjections.get(0).getExpression());
+				case MIN: return criteriaBuilder.min(subProjections.get(0).getExpression());
+				case MOD: return criteriaBuilder.mod(subProjections.get(0).getExpression(), subProjections.get(1).getExpression());
+				case NEG: return criteriaBuilder.neg(subProjections.get(0).getExpression());
+				case PROD: return criteriaBuilder.prod(subProjections.get(0).getExpression(), subProjections.get(1).getExpression());
+				case QUOT: return criteriaBuilder.quot(subProjections.get(0).getExpression(), subProjections.get(1).getExpression());
+				case SQRT: return criteriaBuilder.sqrt(subProjections.get(0).getExpression());
+				case SUBSTRING: 
+					if (subProjections.size() > 2) {
+						return criteriaBuilder.substring(subProjections.get(0).getExpression(), subProjections.get(1).getExpression(), subProjections.get(2).getExpression());
+					} else {
+						return criteriaBuilder.substring(subProjections.get(0).getExpression(), subProjections.get(1).getExpression());
+					}
+				case SUM: return criteriaBuilder.sum(subProjections.get(0).getExpression());
+				case TRIM: return criteriaBuilder.trim(subProjections.get(0).getExpression());
+				case UPPER: return criteriaBuilder.upper(subProjections.get(0).getExpression());
+				default: break;		
 			}
 			
 			throw new NotImplementedException("Function " + function + " not yet implemented");
