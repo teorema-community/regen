@@ -2,7 +2,7 @@ package br.inf.teorema.regen.repository.impl;
 
 import br.inf.teorema.regen.enums.Function;
 import br.inf.teorema.regen.model.Condition;
-import br.inf.teorema.regen.model.FunctionField;
+import br.inf.teorema.regen.model.Projection;
 import br.inf.teorema.regen.model.SelectAndWhere;
 import br.inf.teorema.regen.repository.GenericProjectionRepository;
 import br.inf.teorema.regen.specification.GenericSpecification;
@@ -61,7 +61,8 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
 
         CriteriaQuery<Tuple> tupleQuery = criteriaBuilder.createTupleQuery();
         root = tupleQuery.from(clazz);
-        tupleQuery = applyProjection(criteriaBuilder, tupleQuery, root, selectAndWhere.getSelect(), clazz);
+        List<Projection> projectionList = createProjections(criteriaBuilder, root, selectAndWhere.getSelect(), clazz, new HashMap<>());
+        tupleQuery = applyProjection(tupleQuery, projectionList);
 
         if (selectAndWhere.getWhere() != null) {
         	selectAndWhere.getWhere().setGroupBy(groupBy);
@@ -70,7 +71,7 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
         }
 
         List<Tuple> tuples = paginate(tupleQuery, pageable);
-        List<Map<String, Object>> entities = parseResultList(tuples, selectAndWhere.getSelect(), clazz);
+        List<Map<String, Object>> entities = parseResultList(tuples, projectionList, clazz);
 
         Integer listSize = Math.max(1, entities.size());
         return new PageImpl<Map<String, Object>>(entities, new PageRequest(0, listSize), count);
@@ -105,43 +106,36 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
         return typedQuery.getResultList();
     }
 
-    public <T> CriteriaQuery<Tuple> applyProjection(CriteriaBuilder criteriaBuilder, CriteriaQuery<Tuple> tupleQuery, Root<T> root, List<String> projections, Class<T> clazz) throws NoSuchFieldException {
-        List<Selection<?>> selections = getSelections(criteriaBuilder, root, projections, clazz, new HashMap<>());
+    public <T> CriteriaQuery<Tuple> applyProjection(CriteriaQuery<Tuple> tupleQuery, List<Projection> projectionList) throws NoSuchFieldException {
+    	List<Selection<?>> selections = new ArrayList<>();        
+
+        for (Projection projection : projectionList) {
+        	selections.add(projection.getExpression().alias(projection.getAlias()));
+        }
+    	
         tupleQuery.multiselect(selections.toArray(new Selection[selections.size()]));
         return tupleQuery;
     }
     
-    public <T> List<Selection<?>> getSelections(CriteriaBuilder criteriaBuilder, Root<T> root, List<String> projections, Class<T> clazz, Map<String, Join<?, ?>> joins) throws NoSuchFieldException {
-        List<Selection<?>> selections = new ArrayList<>();
-        List<Expression<?>> expressions = getExpressions(criteriaBuilder, root, projections, clazz, joins);
+    public <T> List<Projection> createProjections(CriteriaBuilder criteriaBuilder, Root<T> root, List<String> projections, Class<T> clazz, Map<String, Join<?, ?>> joins) throws NoSuchFieldException {
+        List<Projection> list = new ArrayList<>();
 
-        for (int i = 0; i < expressions.size(); i++) {
-        	selections.add(expressions.get(i).alias(projections.get(i)));
-        }
-
-        return selections;
-    }
-    
-    public <T> List<Expression<?>> getExpressions(CriteriaBuilder criteriaBuilder, Root<T> root, List<String> projections, Class<T> clazz, Map<String, Join<?, ?>> joins) throws NoSuchFieldException {
-        List<Expression<?>> expressions = new ArrayList<>();
-
-        for (String projection : projections) {
-        	Expression<?> expression = null;
-            FunctionField functionField = Function.extract(projection);
+        for (String p : projections) {
+            Projection projection = new Projection(p);
             
-            if (functionField != null) {
-            	List<Expression<?>> subExpressions = getExpressions(criteriaBuilder, root, functionField.getParameters(), clazz, joins);
-            	expression = functionField.apply(criteriaBuilder, root, subExpressions);
+            if (projection.hasFunction()) {
+            	List<Projection> subProjections = createProjections(criteriaBuilder, root, projection.getParameters(), clazz, joins);
+            	projection.applyFunction(criteriaBuilder, root, subProjections);
             } else {
-	            List<Field> fields = ReflectionUtils.getFields(projection, clazz);
+	            List<Field> fields = ReflectionUtils.getFields(projection.getName(), clazz);
 	
 	            if (fields.size() <= 1) {
 	                Field field = fields.get(0);
 	
 	                if (ReflectionUtils.isEntity(field.getType())) {
-	                	expression = root.join(projection, JoinType.LEFT);
+	                	projection.setExpression(root.join(projection.getName(), JoinType.LEFT));
 	                } else {
-	                	expression = root.get(projection);
+	                	projection.setExpression(root.get(projection.getName()));
 	                }
 	            } else {
 	                Join<?, ?> join = null;
@@ -164,7 +158,7 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
 	                            joins.put(fieldName, join);
 	                        }
 	                    } else {
-	                    	expression = join.get(fieldName);
+	                    	projection.setExpression(join.get(fieldName));
 	                    }
 	
 	                    i++;
@@ -172,25 +166,25 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
 	            }
             }
             
-            expressions.add(expression);
+            list.add(projection);
         }
 
-        return expressions;
+        return list;
     }
 
-    public List<Map<String, Object>> parseResultList(List<Tuple> tuples, List<String> projections, Class<T> clazz) throws NoSuchFieldException {
+    public List<Map<String, Object>> parseResultList(List<Tuple> tuples, List<Projection> projectionList, Class<T> clazz) throws NoSuchFieldException {
         List<Map<String, Object>> entities = new ArrayList<Map<String, Object>>();
 
         for (Tuple tuple : tuples) {
             Map<String, Object> map = new HashMap<>();
 
-            for (String projection : projections) {
+            for (Projection projection : projectionList) {
                 Map<String, Object> lastMap = map;
                 
-        		if (Function.hasFunction(projection)) {
-        			map.put(projection, tuple.get(projection, Object.class));  					
+        		if (projection.hasFunction()) {
+        			map.put(projection.getAlias(), tuple.get(projection.getAlias(), Object.class));  					
         		} else {                
-	                List<Field> fields = ReflectionUtils.getFields(projection, clazz);
+	                List<Field> fields = ReflectionUtils.getFields(projection.getName(), clazz);
 	
 	                int i = 0;
 	                for (Field field : fields) {
@@ -205,9 +199,13 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
 	                            lastMap = newMap;
 	                        }
 	                    } else {
-	                    	Object value = tuple.get(projection, field.getType());
+	                    	Object value = tuple.get(projection.getAlias(), field.getType());
 	                    	
 	                    	if (value != null) {
+	                    		if (projection.isHasAlias()) {
+	                    			fieldName = projection.getAlias();
+	                    		}
+	                    		
 	                    		lastMap.put(fieldName, value);
 	                    	}
 	                    }
