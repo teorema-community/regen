@@ -73,8 +73,7 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
         List<Tuple> tuples = paginate(tupleQuery, pageable);
         List<Map<String, Object>> entities = parseResultList(tuples, projectionList, clazz);
 
-        Integer listSize = Math.max(1, entities.size());
-        return new PageImpl<Map<String, Object>>(entities, new PageRequest(0, listSize), count);
+        return new PageImpl<Map<String, Object>>(entities, new PageRequest(pageable.getPageNumber(), pageable.getPageSize()), count);
     }
 
     public Long count(CriteriaBuilder criteriaBuilder, CriteriaQuery<Long> countQuery, Specification<T> specification, Root<T> root, Boolean distinct) {
