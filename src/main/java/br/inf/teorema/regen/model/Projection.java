@@ -27,15 +27,15 @@ public class Projection<N> {
 		this.originalName = originalName;
 		this.name = originalName;
 		this.alias = originalName;
-		this.hasAlias = this.originalName.contains("as");
+		this.hasAlias = this.originalName.contains(" as ");
 		
 		if (hasAlias) {
-			String[] split = originalName.split("as");
+			String[] split = originalName.split(" as ");
 			this.name = split[0].trim();
 			this.alias = split[1].trim();
 		}
 		
-		if (this.name.contains("(")) {
+		if (this.name.contains("(") && this.name.contains(")")) {
 			String funStr = name.substring(0, name.indexOf("("));
 			this.function = Function.valueOf(funStr.toUpperCase());
 			this.name = name.substring(name.indexOf("(") + 1, name.lastIndexOf(")"));
@@ -47,7 +47,7 @@ public class Projection<N> {
 		List<String> parameters = new ArrayList<>();
 		
 		while (!name.isEmpty()) {			
-			if (name.contains("(")) {
+			if (name.contains("(") && name.contains(")")) {
 				int endIndex = name.indexOf(")") + 1;
 				parameters.add(name.substring(0, endIndex));
 				name = name.substring(endIndex);
