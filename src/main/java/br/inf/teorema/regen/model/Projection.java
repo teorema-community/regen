@@ -130,7 +130,7 @@ public class Projection<N> {
 				case ABS: return criteriaBuilder.abs(subProjections.get(0).getExpression());
 				case AVG: return criteriaBuilder.avg(subProjections.get(0).getExpression());
 				case COUNT:	return criteriaBuilder.count(subProjections.get(0).getExpression());
-				case COUNT_DISCTINT: return criteriaBuilder.countDistinct(subProjections.get(0).getExpression());
+				case COUNT_DISTINCT: return criteriaBuilder.countDistinct(subProjections.get(0).getExpression());
 				case DIFF: return criteriaBuilder.diff(subProjections.get(0).getExpression(), subProjections.get(1).getExpression());
 				case LOWER: return criteriaBuilder.lower(subProjections.get(0).getExpression());
 				case MAX: return criteriaBuilder.max(subProjections.get(0).getExpression());
