@@ -39,10 +39,37 @@ public class Projection<N> {
 			String funStr = name.substring(0, name.indexOf("("));
 			this.function = Function.valueOf(funStr.toUpperCase());
 			this.name = name.substring(name.indexOf("(") + 1, name.lastIndexOf(")"));
-			this.parameters = Arrays.asList(name.split(",")).stream().map(p -> p.trim()).collect(Collectors.toList());
+			this.parameters = extractParameters(name);
 		}
 	}
 	
+	private List<String> extractParameters(String name) {
+		List<String> parameters = new ArrayList<>();
+		
+		while (!name.isEmpty()) {			
+			if (name.contains("(")) {
+				int endIndex = name.indexOf(")") + 1;
+				parameters.add(name.substring(0, endIndex));
+				name = name.substring(endIndex);
+			} else {
+				int endIndex = name.indexOf(",");
+				
+				if (endIndex == -1) {
+					endIndex = name.length();
+				}
+				
+				parameters.add(name.substring(0, endIndex));
+				name = name.substring(endIndex);
+			}
+			
+			if (!name.isEmpty() && name.charAt(0) == ',') {
+				name = name.substring(1);
+			}
+		}
+		
+		return parameters.stream().map(p -> p.trim()).filter(p -> !p.isEmpty()).collect(Collectors.toList());
+	}
+
 	public String getOriginalName() {
 		return originalName;
 	}
