@@ -76,7 +76,7 @@ public class GenericSpecification<T> implements Specification<T> {
 					|| condition.getConditionalOperator().equals(ConditionalOperator.IS_NULL)
 				)
 		) {
-			FieldExpression fieldExpression = getFieldExpressionByCondition(condition, root, query, criteriaBuilder);
+			FieldExpression fieldExpression = getFieldExpressionByCondition(condition, root);
 			Object value = condition.getValue();
 			boolean isValueExpression = false;
 
@@ -278,9 +278,7 @@ public class GenericSpecification<T> implements Specification<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private FieldExpression getFieldExpressionByCondition(
-		Condition condition, Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
-	) throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, ParseException, InvocationTargetException {
+	private FieldExpression getFieldExpressionByCondition(Condition condition, Root<T> root) throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, ParseException, InvocationTargetException {
 		FieldExpression fieldExpression = this.getFieldExpressionByField(condition.getField(), condition.getJoinType(), condition.getFieldJoins(), root);
 
 		if (Arrays.asList(new ConditionalOperator[] {
@@ -412,7 +410,7 @@ public class GenericSpecification<T> implements Specification<T> {
 					List<Expression<?>> expressions = new ArrayList<>();
 
 					if (orderBy.getCondition().getField() != null && !orderBy.getCondition().getField().isEmpty()) {
-						expressions.add(this.getFieldExpressionByCondition(orderBy.getCondition(), root, query, criteriaBuilder).getExpression());
+						expressions.add(this.getFieldExpressionByCondition(orderBy.getCondition(), root).getExpression());
 					}
 
 					for (Case cas : orderBy.getCondition().getCases()) {

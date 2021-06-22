@@ -1,4 +1,4 @@
-package br.inf.teorema.regen.mediator;
+package br.inf.teorema.regen.facade;
 
 import br.inf.teorema.regen.model.Condition;
 import br.inf.teorema.regen.model.SelectAndWhere;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class ConditionMediator<T> {
+public class ConditionFacade<T> {
 
     public Page<T> findAllByCondition(Condition condition, Pageable pageable, JpaSpecificationExecutor<T> executor, Class<T> clazz) {
         return executor.findAll(new GenericSpecification<T>(condition, clazz), pageable);
@@ -41,12 +41,7 @@ public class ConditionMediator<T> {
         GenericProjectionRepository<T> projectionRepository,
         Class<T> clazz
     ) throws NoSuchFieldException {
-        Specification<T> specification = null;
-        if (selectAndWhere.getWhere() != null) {
-            specification = new GenericSpecification<T>(selectAndWhere.getWhere(), clazz);
-        }
-
-        return projectionRepository.findAllBySpecificationAndProjections(specification, selectAndWhere, pageable, clazz);
+        return projectionRepository.findAllBySpecificationAndProjections(selectAndWhere, pageable, clazz);
     }
 
     public List<Map<String, Object>> findAllBySelectAndWhere(
@@ -62,14 +57,7 @@ public class ConditionMediator<T> {
             GenericProjectionRepository<T> projectionRepository,
             Class<T> clazz
     ) throws NoSuchFieldException {
-        Specification<T> specification = null;
-        if (selectAndWhere.getWhere() != null) {
-            specification = new GenericSpecification<T>(selectAndWhere.getWhere(), clazz);
-        }
-
-        List<Map<String, Object>> results = projectionRepository.findAllBySpecificationAndProjections(
-            specification, selectAndWhere, new PageRequest(0, 1), clazz
-        ).getContent();
+        List<Map<String, Object>> results = projectionRepository.findAllBySpecificationAndProjections(selectAndWhere, new PageRequest(0, 1), clazz).getContent();
 
         if (results.isEmpty()) {
             return Optional.empty();
