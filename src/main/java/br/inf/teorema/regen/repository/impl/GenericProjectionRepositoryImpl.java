@@ -123,8 +123,7 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
         typedQuery.setMaxResults(1);
 
         try {
-        	boolean exists = typedQuery.getSingleResult();
-        	return exists;
+        	return typedQuery.getSingleResult();
         } catch (NoResultException e) {
         	return false;
         }
