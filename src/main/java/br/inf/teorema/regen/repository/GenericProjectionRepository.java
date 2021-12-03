@@ -2,6 +2,7 @@ package br.inf.teorema.regen.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.domain.Specification;
 
 import br.inf.teorema.regen.model.SelectAndWhere;
@@ -11,4 +12,5 @@ import java.util.Map;
 
 public interface GenericProjectionRepository<T> {
     public Page<Map<String, Object>> findAllBySpecificationAndProjections(SelectAndWhere selectAndWhere, Pageable pageable, Class<T> clazz) throws NoSuchFieldException;
+    public Slice<Map<String, Object>> findAllBySpecificationAndProjectionsSliced(SelectAndWhere selectAndWhere, Pageable pageable, Class<T> clazz) throws NoSuchFieldException;
 }

@@ -27,4 +27,13 @@ public class SelectAndWhere {
     public void setWhere(Condition where) {
         this.where = where;
     }
+    
+    public boolean isDistinct() {
+    	if (where != null) {
+    		return where.getDistinct();
+    	}
+    	
+    	return false;
+    }
+    
 }
