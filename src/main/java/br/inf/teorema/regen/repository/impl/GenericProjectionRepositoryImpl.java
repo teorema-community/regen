@@ -15,6 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -57,7 +59,7 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
         	specification = new GenericSpecification<>(selectAndWhere.getWhere(), clazz);
         }
         
-        Long count = count(criteriaBuilder, countQuery, specification, root, selectAndWhere.getWhere().getDistinct());
+        Long count = count(criteriaBuilder, countQuery, specification, root, selectAndWhere.isDistinct());
 
         CriteriaQuery<Tuple> tupleQuery = criteriaBuilder.createTupleQuery();
         root = tupleQuery.from(clazz);
@@ -75,6 +77,57 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
 
         return new PageImpl<Map<String, Object>>(entities, new PageRequest(pageable.getPageNumber(), pageable.getPageSize()), count);
     }
+    
+    @Override
+	public Slice<Map<String, Object>> findAllBySpecificationAndProjectionsSliced(SelectAndWhere selectAndWhere,
+			Pageable pageable, Class<T> clazz) throws NoSuchFieldException {
+    	CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();        
+        Specification<T> specification = null;
+
+        CriteriaQuery<Tuple> tupleQuery = criteriaBuilder.createTupleQuery();
+        Root<T> root = tupleQuery.from(clazz);
+        List<Projection> projectionList = createProjections(criteriaBuilder, root, selectAndWhere.getSelect(), clazz, new HashMap<>());
+        tupleQuery = applyProjection(tupleQuery, projectionList);
+
+        if (selectAndWhere.getWhere() != null) {
+        	specification = new GenericSpecification<>(selectAndWhere.getWhere(), clazz);
+            tupleQuery.where(specification.toPredicate(root, tupleQuery, criteriaBuilder));
+        }
+
+        List<Tuple> tuples = paginate(tupleQuery, pageable);
+        List<Map<String, Object>> entities = parseResultList(tuples, projectionList, clazz);
+
+        return new SliceImpl<Map<String, Object>>(
+    		entities, 
+    		pageable, 
+    		checkHasNext(criteriaBuilder, specification, pageable, clazz)
+		);
+	}
+
+	private boolean checkHasNext(CriteriaBuilder criteriaBuilder, Specification<T> specification, Pageable pageable, Class<T> clazz) {
+		if (pageable == null) {
+			return false;
+		}
+		
+		CriteriaQuery<Boolean> query = criteriaBuilder.createQuery(Boolean.class);
+		Root<T> root = query.from(clazz);
+		
+		query.select(criteriaBuilder.literal(true));   
+
+        if (specification != null) {
+        	query.where(specification.toPredicate(root, query, criteriaBuilder));
+        }
+        
+        TypedQuery<Boolean> typedQuery = entityManager.createQuery(query);        
+        typedQuery.setFirstResult((pageable.getPageNumber() + 1) * pageable.getPageSize());
+        typedQuery.setMaxResults(1);
+
+        try {
+        	return typedQuery.getSingleResult();
+        } catch (NoResultException e) {
+        	return false;
+        }
+	}
 
     public Long count(CriteriaBuilder criteriaBuilder, CriteriaQuery<Long> countQuery, Specification<T> specification, Root<T> root, Boolean distinct) {
     	if (distinct) {
