@@ -895,7 +895,9 @@ public class ReflectionUtils {
 	}
 	
 	public static Object convertValueToEnumIfNeeded(Class<?> fieldType, Object value) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
-		if (fieldType.isEnum() && value != null && !(value instanceof Enum<?>)) {
+		if (fieldType.isEnum() && value != null && !(value instanceof Enum<?>) && value != "" && (
+			!(value instanceof List) || (!((List<?>) value).isEmpty())
+		)) {
 			value = fieldType.getDeclaredMethod("valueOf", String.class).invoke(null, value.toString());
 		}
 		
