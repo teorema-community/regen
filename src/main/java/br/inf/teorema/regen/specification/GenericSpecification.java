@@ -398,7 +398,7 @@ public class GenericSpecification<T> implements Specification<T> {
 				}
 			}
 			
-			this.joins.add(new FieldJoin(sourceField, field, joinType, alias, join));
+			this.joins.add(new FieldJoin(sourceField, field, joinType, alias, on, join));
 			
 			return join;
 		}

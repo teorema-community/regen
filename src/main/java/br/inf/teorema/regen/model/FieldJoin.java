@@ -38,13 +38,14 @@ public class FieldJoin {
         this.type = type;
     }
 
-	public FieldJoin(String sourceField, String field, JoinType type, String alias, Join<?, ?> join) {
+	public FieldJoin(String sourceField, String field, JoinType type, String alias, Condition on, Join<?, ?> join) {
 		super();
 		this.sourceField = sourceField;
 		this.field = field;
 		this.type = type;
 		this.alias = alias;
 		this.join = join;
+		this.on = on;
 	}
 
 	public FieldJoin(String sourceField, String field, JoinType type, String alias) {
