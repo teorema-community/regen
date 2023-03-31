@@ -390,7 +390,7 @@ public class GenericSpecification<T> implements Specification<T> {
 			
 			if (on != null) {
 				List<Predicate> predicates = addCondition(
-					this.condition, LogicalOperator.AND, new ArrayList<Predicate>(), true, join, query, criteriaBuilder
+					on, LogicalOperator.AND, new ArrayList<Predicate>(), true, join, query, criteriaBuilder
 				);
 				
 				if (predicates != null && !predicates.isEmpty()) {
