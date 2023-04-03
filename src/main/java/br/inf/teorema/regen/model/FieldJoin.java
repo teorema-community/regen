@@ -11,6 +11,7 @@ public class FieldJoin {
     private String field;
     private JoinType type = JoinType.INNER;
     private String alias;
+    private Condition on;
     
     @JsonIgnore
     private Join<?, ?> join;
@@ -37,13 +38,14 @@ public class FieldJoin {
         this.type = type;
     }
 
-	public FieldJoin(String sourceField, String field, JoinType type, String alias, Join<?, ?> join) {
+	public FieldJoin(String sourceField, String field, JoinType type, String alias, Condition on, Join<?, ?> join) {
 		super();
 		this.sourceField = sourceField;
 		this.field = field;
 		this.type = type;
 		this.alias = alias;
 		this.join = join;
+		this.on = on;
 	}
 
 	public FieldJoin(String sourceField, String field, JoinType type, String alias) {
@@ -52,6 +54,15 @@ public class FieldJoin {
 		this.field = field;
 		this.type = type;
 		this.alias = alias;
+	}
+
+	public FieldJoin(String sourceField, String field, JoinType type, String alias, Condition on) {
+		super();
+		this.sourceField = sourceField;
+		this.field = field;
+		this.type = type;
+		this.alias = alias;
+		this.on = on;
 	}
 
 	public String getSourceField() {
@@ -92,6 +103,14 @@ public class FieldJoin {
 
 	public void setAlias(String alias) {
 		this.alias = alias;
+	}
+
+	public Condition getOn() {
+		return on;
+	}
+
+	public void setOn(Condition on) {
+		this.on = on;
 	}
 	
 }
