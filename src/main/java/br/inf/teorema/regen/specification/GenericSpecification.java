@@ -1,6 +1,7 @@
 package br.inf.teorema.regen.specification;
 
 import br.inf.teorema.regen.enums.ConditionalOperator;
+import br.inf.teorema.regen.enums.FunctionType;
 import br.inf.teorema.regen.enums.LogicalOperator;
 import br.inf.teorema.regen.enums.OrderDirection;
 import br.inf.teorema.regen.model.*;
@@ -302,6 +303,7 @@ public class GenericSpecification<T> implements Specification<T> {
 		Class<?> fieldType = null;
 		String fieldName = null;
 		String lastFieldName = null;
+		List<Function> functions = Function.extractFunctionsFromfield(field);
 		List<Field> fields = ReflectionUtils.getFields(field, clazz);
 
 		if (fields.size() > 1) {
@@ -353,7 +355,7 @@ public class GenericSpecification<T> implements Specification<T> {
 
 		return new FieldExpression(expression, fieldType, fieldName);
 	}
-	
+
 	private JoinType copyJoinType(JoinType joinType) {
 		if (joinType == null) {
 			return JoinType.INNER;
@@ -482,12 +484,15 @@ public class GenericSpecification<T> implements Specification<T> {
 		return query;
 	}
 	
-	private CriteriaQuery<?> setHaving(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+	private CriteriaQuery<?> setHaving(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
 		if (condition.getHaving() != null) {
-			query.having(criteriaBuilder.lessThanOrEqualTo(				
+			//FieldExpression fieldExpression = getFieldExpressionByCondition(condition.getHaving(), root, query, criteriaBuilder);
+			List<Predicate> havingPredicates = addCondition(condition.getHaving(), LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder);
+			query.having(havingPredicates.toArray(new Predicate[havingPredicates.size()]));
+			/*query.having(criteriaBuilder.lessThanOrEqualTo(				
 				criteriaBuilder.sum(criteriaBuilder.diff(root.join("balances").get("entries"), root.join("balances").get("exits"))),
 				0				
-			));
+			));*/
 		}
 		
 		return query;
