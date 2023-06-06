@@ -303,7 +303,7 @@ public class GenericSpecification<T> implements Specification<T> {
 		Class<?> fieldType = null;
 		String fieldName = null;
 		String lastFieldName = null;
-		List<Function> functions = Function.extractFunctionsFromfield(field);
+		Function function = Function.extractFunctionFromfield(field);
 		List<Field> fields = ReflectionUtils.getFields(field, clazz);
 
 		if (fields.size() > 1) {

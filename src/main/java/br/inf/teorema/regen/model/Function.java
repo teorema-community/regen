@@ -3,11 +3,15 @@ package br.inf.teorema.regen.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import br.inf.teorema.regen.enums.FunctionType;
+import br.inf.teorema.regen.util.JSONUtil;
 
 public class Function {
 	
 	private FunctionType type;
+	private String content;
 	private List<Function> subFunctions;
 	
 	public Function(FunctionType type) {
@@ -15,37 +19,45 @@ public class Function {
 		this.type = type;
 	}
 
-	public static List<Function> extractFunctionsFromfield(String field) {
-		List<Function> functions = new ArrayList<>();
-		
-		if (field != null && !field.isEmpty()) {
-			String[] fields = field.split(",");
+	public static Function extractFunctionFromfield(String field) {		
+		if (field != null && !field.isEmpty()) {			
+			int startIndex = field.indexOf("(");
 			
-			for (String f : fields) {
-				int startIndex = field.indexOf("(");
+			if (startIndex > -1 ) {
+				String functionName = field.substring(0, startIndex).trim();
+				Function function = new Function(FunctionType.valueOf(functionName.toUpperCase()));
 				
-				if (startIndex > -1 ) {
-					String functionName = f.substring(0, startIndex);
-					Function function = new Function(FunctionType.valueOf(functionName.toUpperCase()));
-					
-					int endIndex = f.lastIndexOf(")");
-					
-					if (endIndex == -1) {
-						endIndex = f.length();
-					}
-					
-					String content = f.substring(startIndex + 1, endIndex);
-					function.setSubFunctions(extractFunctionsFromfield(content));
-					functions.add(function);
+				int endIndex = field.lastIndexOf(")");
+				
+				if (endIndex == -1) {
+					endIndex = field.length();
 				}
+				
+				String temp = field.substring(startIndex + 1, endIndex);			
+				
+				if (!temp.isEmpty()) {
+					String[] fields = temp.split(",");
+					
+					for (String f : fields) {
+						Function subFunction = extractFunctionFromfield(f);
+						
+						if (subFunction != null) {
+							function.getSubFunctions().add(subFunction);
+						} else {
+							function.setContent(temp);
+						}
+					}
+				}
+				
+				return function;
 			}
 		}
 		
-		return functions;
+		return null;
 	}
 	
-	public static void main(String[] args) {
-		System.out.println(extractFunctionsFromfield("diff(sum(balances.entries), sum(balances.entries))"));
+	public static void main(String[] args) throws JsonProcessingException {
+		System.out.println(JSONUtil.prettify(extractFunctionFromfield("diff(sum(balances.entries), sum(balances.exits))")));
 	}
 	
 	public FunctionType getType() {
@@ -63,6 +75,14 @@ public class Function {
 	}
 	public void setSubFunctions(List<Function> subFunctions) {
 		this.subFunctions = subFunctions;
+	}
+
+	public String getContent() {
+		return content;
+	}
+
+	public void setContent(String content) {
+		this.content = content;
 	}
 	
 }
