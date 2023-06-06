@@ -25,6 +25,7 @@ public class Condition {
 	private List<Case> cases;
 	private Boolean distinct = false;
 	private Boolean not = false;
+	private Condition having;
 	
 	public Condition() {}
 	
@@ -361,6 +362,14 @@ public class Condition {
 
 	public void setNot(Boolean not) {
 		this.not = not;
+	}
+
+	public Condition getHaving() {
+		return having;
+	}
+
+	public void setHaving(Condition having) {
+		this.having = having;
 	}
 	
 }

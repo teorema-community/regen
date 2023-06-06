@@ -37,6 +37,7 @@ public class GenericSpecification<T> implements Specification<T> {
 			
 			query = setGroupBy(root, query, criteriaBuilder);
 			query = setOrderBy(root, query, criteriaBuilder);
+			query = setHaving(root, query, criteriaBuilder);
 
 			return addCondition(this.condition, LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
 		} catch (NoSuchFieldException | ParseException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
@@ -478,6 +479,17 @@ public class GenericSpecification<T> implements Specification<T> {
 			query.orderBy(orders);
 		}
 
+		return query;
+	}
+	
+	private CriteriaQuery<?> setHaving(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+		if (condition.getHaving() != null) {
+			query.having(criteriaBuilder.lessThanOrEqualTo(				
+				criteriaBuilder.sum(criteriaBuilder.diff(root.join("balances").get("entries"), root.join("balances").get("exits"))),
+				0				
+			));
+		}
+		
 		return query;
 	}
 
