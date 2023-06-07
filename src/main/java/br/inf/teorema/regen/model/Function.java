@@ -30,24 +30,24 @@ public class Function {
 	
 	public Function(FunctionType type) {
 		super();
-		this.type = type;	
+		this.type = type;
 	}
 	
-	private List<FieldExpression> createExpression(
+	private List<Expression> createExpression(
 		GenericSpecification<?> genericSpecification, JoinType joinType, List<FieldJoin> fieldJoins, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
 	) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, NoSuchFieldException, ParseException {
-		List<FieldExpression> subExpressions = new ArrayList<>();
+		List<Expression> subExpressions = new ArrayList<>();
 		
 		if (type != null) {			
 			if (getSubFunctions().isEmpty()) {
 				if (getContent() != null && !getContent().isEmpty()) {
 					subExpressions.add(
-						genericSpecification.getFieldExpressionByField(getContent(), joinType, fieldJoins, from, query, criteriaBuilder)
+						genericSpecification.getFieldExpressionByField(getContent(), joinType, fieldJoins, from, query, criteriaBuilder).getExpression()
 					);
 				}
 			} else {
 				for (Function subFunction : getSubFunctions()) {
-					subExpressions.addAll(subFunction.createExpression(genericSpecification, joinType, fieldJoins, from, query, criteriaBuilder));
+					subExpressions.add(subFunction.getExpression());
 				}
 			}
 			
@@ -59,9 +59,9 @@ public class Function {
 				Method method = criteriaBuilder.getClass().getMethod(
 					this.type.getMethodName(), paramTypes.toArray(new Class<?>[paramTypes.size()])
 				);
-				List<Expression> params = subExpressions.stream().map(fe -> fe.getExpression()).collect(Collectors.toList());
+				//List<Expression> params = subExpressions.stream().map(fe -> fe.getExpression()).collect(Collectors.toList());
 				this.setExpression((Expression) method.invoke(
-					criteriaBuilder, params.toArray(new Expression[params.size()])					
+					criteriaBuilder, subExpressions.toArray(new Expression[subExpressions.size()])					
 				));
 			}
 		}
@@ -76,10 +76,8 @@ public class Function {
 			int startIndex = field.indexOf("(");
 			
 			if (startIndex > -1 ) {
-				String functionName = field.substring(0, startIndex).trim();
-				Function function = new Function(
-					FunctionType.valueOf(functionName.toUpperCase())
-				);	
+				String methodName = field.substring(0, startIndex).trim();
+				Function function = new Function(FunctionType.getByMethodName(methodName, true));	
 				
 				int endIndex = field.lastIndexOf(")");
 				
