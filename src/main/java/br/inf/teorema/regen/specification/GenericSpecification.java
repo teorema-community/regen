@@ -1,6 +1,7 @@
 package br.inf.teorema.regen.specification;
 
 import br.inf.teorema.regen.enums.ConditionalOperator;
+import br.inf.teorema.regen.enums.FunctionType;
 import br.inf.teorema.regen.enums.LogicalOperator;
 import br.inf.teorema.regen.enums.OrderDirection;
 import br.inf.teorema.regen.model.*;
@@ -37,6 +38,7 @@ public class GenericSpecification<T> implements Specification<T> {
 			
 			query = setGroupBy(root, query, criteriaBuilder);
 			query = setOrderBy(root, query, criteriaBuilder);
+			query = setHaving(root, query, criteriaBuilder);
 
 			return addCondition(this.condition, LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
 		} catch (NoSuchFieldException | ParseException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
@@ -294,65 +296,71 @@ public class GenericSpecification<T> implements Specification<T> {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private FieldExpression getFieldExpressionByField(
+	public FieldExpression getFieldExpressionByField(
 		String field, JoinType joinType, List<FieldJoin> fieldJoins, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
 	) throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ParseException {
 		Join<?, ?> join = null;
 		Class<?> fieldType = null;
 		String fieldName = null;
 		String lastFieldName = null;
-		List<Field> fields = ReflectionUtils.getFields(field, clazz);
-
-		if (fields.size() > 1) {
-			int j = 0;
-			for (Field f : fields) {
-				FieldJoin fieldJoin = null;
-				String joinAlias = null;
-				JoinType tempJoinType = copyJoinType(joinType);
-				Condition on = null;
-
-				if (!fieldJoins.isEmpty()) {
-					for (FieldJoin fj : fieldJoins) {
-						if (f.getName().equals(fj.getField()) && (
-								j == 0
-										|| fj.getSourceField() == null
-										|| fields.get(j - 1).getName().equals(fj.getSourceField())
-						)
-						) {
-							fieldJoin = fj;
-							break;
+		Function function = Function.extractFunctionFromfield(field, this, joinType, fieldJoins, from, query, criteriaBuilder);
+		
+		if (function != null) {
+			return new FieldExpression(function);
+		} else {
+			List<Field> fields = ReflectionUtils.getFields(field, clazz);
+	
+			if (fields.size() > 1) {
+				int j = 0;
+				for (Field f : fields) {
+					FieldJoin fieldJoin = null;
+					String joinAlias = null;
+					JoinType tempJoinType = copyJoinType(joinType);
+					Condition on = null;
+	
+					if (!fieldJoins.isEmpty()) {
+						for (FieldJoin fj : fieldJoins) {
+							if (f.getName().equals(fj.getField()) && (
+									j == 0
+											|| fj.getSourceField() == null
+											|| fields.get(j - 1).getName().equals(fj.getSourceField())
+							)
+							) {
+								fieldJoin = fj;
+								break;
+							}
 						}
 					}
-				}
-
-				if (fieldJoin != null) {
-					tempJoinType = fieldJoin.getType();
-					joinAlias = fieldJoin.getAlias();
-					on = fieldJoin.getOn();
-				}
-
-				if (j == 0) {
-					join = getJoin(from, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder);
-				} else if (j < fields.size() - 1) {
-					join = getJoin(join, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder);
-				} else {
-					fieldType = f.getType();
-					fieldName = f.getName();
-				}
-				
-				lastFieldName = f.getName();
-				j++;
-			}
-		} else {
-			fieldType = fields.get(0).getType();
-			fieldName = fields.get(0).getName();
-		}
-
-		Expression expression = join != null ? join.get(fieldName) : from.get(fieldName);
-
-		return new FieldExpression(expression, fieldType, fieldName);
-	}
 	
+					if (fieldJoin != null) {
+						tempJoinType = fieldJoin.getType();
+						joinAlias = fieldJoin.getAlias();
+						on = fieldJoin.getOn();
+					}
+	
+					if (j == 0) {
+						join = getJoin(from, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder);
+					} else if (j < fields.size() - 1) {
+						join = getJoin(join, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder);
+					} else {
+						fieldType = f.getType();
+						fieldName = f.getName();
+					}
+					
+					lastFieldName = f.getName();
+					j++;
+				}
+			} else {
+				fieldType = fields.get(0).getType();
+				fieldName = fields.get(0).getName();
+			}
+	
+			Expression expression = join != null ? join.get(fieldName) : from.get(fieldName);
+	
+			return new FieldExpression(expression, fieldType, fieldName);
+		}
+	}
+
 	private JoinType copyJoinType(JoinType joinType) {
 		if (joinType == null) {
 			return JoinType.INNER;
@@ -478,6 +486,20 @@ public class GenericSpecification<T> implements Specification<T> {
 			query.orderBy(orders);
 		}
 
+		return query;
+	}
+	
+	private CriteriaQuery<?> setHaving(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
+		if (condition.getHaving() != null) {
+			//FieldExpression fieldExpression = getFieldExpressionByCondition(condition.getHaving(), root, query, criteriaBuilder);
+			List<Predicate> havingPredicates = addCondition(condition.getHaving(), LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder);
+			query.having(havingPredicates.toArray(new Predicate[havingPredicates.size()]));
+			/*query.having(criteriaBuilder.lessThanOrEqualTo(				
+				criteriaBuilder.sum(criteriaBuilder.diff(root.join("balances").get("entries"), root.join("balances").get("exits"))),
+				0				
+			));*/
+		}
+		
 		return query;
 	}
 

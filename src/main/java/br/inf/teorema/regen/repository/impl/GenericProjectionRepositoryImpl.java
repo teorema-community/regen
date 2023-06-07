@@ -1,6 +1,6 @@
 package br.inf.teorema.regen.repository.impl;
 
-import br.inf.teorema.regen.enums.Function;
+import br.inf.teorema.regen.enums.FunctionType;
 import br.inf.teorema.regen.model.Condition;
 import br.inf.teorema.regen.model.Projection;
 import br.inf.teorema.regen.model.SelectAndWhere;

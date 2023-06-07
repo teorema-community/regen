@@ -11,14 +11,14 @@ import javax.persistence.criteria.Root;
 
 import org.apache.commons.lang3.NotImplementedException;
 
-import br.inf.teorema.regen.enums.Function;
+import br.inf.teorema.regen.enums.FunctionType;
 
 public class Projection<N> {
 
 	private String originalName;
 	private String name;
 	private String alias;
-	private Function function;
+	private FunctionType function;
 	private List<String> parameters = new ArrayList<>();
 	private Expression<?> expression;
 	private boolean hasAlias = false;
@@ -37,7 +37,7 @@ public class Projection<N> {
 		
 		if (this.name.contains("(") && this.name.contains(")")) {
 			String funStr = name.substring(0, name.indexOf("("));
-			this.function = Function.valueOf(funStr.toUpperCase());
+			this.function = FunctionType.getByMethodName(funStr.toUpperCase(), true);
 			this.name = name.substring(name.indexOf("(") + 1, name.lastIndexOf(")"));
 			this.parameters = extractParameters(name);
 		}
@@ -94,11 +94,11 @@ public class Projection<N> {
 		this.alias = alias;
 	}
 
-	public Function getFunction() {
+	public FunctionType getFunction() {
 		return function;
 	}
 
-	public void setFunction(Function function) {
+	public void setFunction(FunctionType function) {
 		this.function = function;
 	}
 	public List<String> getParameters() {
