@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import br.inf.teorema.regen.enums.FunctionType;
 import br.inf.teorema.regen.specification.GenericSpecification;
 import br.inf.teorema.regen.util.JSONUtil;
+import br.inf.teorema.regen.util.ReflectionUtils;
 
 public class Function {
 	
@@ -50,13 +52,16 @@ public class Function {
 			}
 			
 			if (!subExpressions.isEmpty()) {
-				List<Class<?>> fieldTypes = subExpressions.stream().map(fe -> fe.getFieldType()).collect(Collectors.toList());
+				List<Class<?>> paramTypes = subExpressions.stream()
+					//.map(fe -> fe.getFieldType())
+					.map(fe -> Expression.class)
+					.collect(Collectors.toList());				
 				Method method = criteriaBuilder.getClass().getMethod(
-					this.type.getMethodName(), fieldTypes.toArray(new Class<?>[fieldTypes.size()])
+					this.type.getMethodName(), paramTypes.toArray(new Class<?>[paramTypes.size()])
 				);
+				List<Expression> params = subExpressions.stream().map(fe -> fe.getExpression()).collect(Collectors.toList());
 				this.setExpression((Expression) method.invoke(
-					criteriaBuilder,
-					subExpressions.stream().map(fe -> fe.getExpression()).collect(Collectors.toList())
+					criteriaBuilder, params.toArray(new Expression[params.size()])					
 				));
 			}
 		}
@@ -74,8 +79,7 @@ public class Function {
 				String functionName = field.substring(0, startIndex).trim();
 				Function function = new Function(
 					FunctionType.valueOf(functionName.toUpperCase())
-				);
-				function.createExpression(genericSpecification, joinType, fieldJoins, from, query, criteriaBuilder);	
+				);	
 				
 				int endIndex = field.lastIndexOf(")");
 				
@@ -99,6 +103,7 @@ public class Function {
 					}
 				}
 				
+				function.createExpression(genericSpecification, joinType, fieldJoins, from, query, criteriaBuilder);
 				return function;
 			}
 		}

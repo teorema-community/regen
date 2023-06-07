@@ -26,7 +26,10 @@ public class FieldExpression {
 		
 		if (function != null) {
 			this.expression = function.getExpression();
-			this.fieldType = function.getExpression().getClass();
+			
+			if (function.getExpression() != null) {
+				this.fieldType = function.getExpression().getClass();
+			}
 		}
 	}
 
