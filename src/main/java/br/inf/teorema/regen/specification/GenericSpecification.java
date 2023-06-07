@@ -296,64 +296,69 @@ public class GenericSpecification<T> implements Specification<T> {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private FieldExpression getFieldExpressionByField(
+	public FieldExpression getFieldExpressionByField(
 		String field, JoinType joinType, List<FieldJoin> fieldJoins, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
 	) throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ParseException {
 		Join<?, ?> join = null;
 		Class<?> fieldType = null;
 		String fieldName = null;
 		String lastFieldName = null;
-		Function function = Function.extractFunctionFromfield(field);
-		List<Field> fields = ReflectionUtils.getFields(field, clazz);
-
-		if (fields.size() > 1) {
-			int j = 0;
-			for (Field f : fields) {
-				FieldJoin fieldJoin = null;
-				String joinAlias = null;
-				JoinType tempJoinType = copyJoinType(joinType);
-				Condition on = null;
-
-				if (!fieldJoins.isEmpty()) {
-					for (FieldJoin fj : fieldJoins) {
-						if (f.getName().equals(fj.getField()) && (
-								j == 0
-										|| fj.getSourceField() == null
-										|| fields.get(j - 1).getName().equals(fj.getSourceField())
-						)
-						) {
-							fieldJoin = fj;
-							break;
+		Function function = Function.extractFunctionFromfield(field, this, joinType, fieldJoins, from, query, criteriaBuilder);
+		
+		if (function != null) {
+			return new FieldExpression(function);
+		} else {
+			List<Field> fields = ReflectionUtils.getFields(field, clazz);
+	
+			if (fields.size() > 1) {
+				int j = 0;
+				for (Field f : fields) {
+					FieldJoin fieldJoin = null;
+					String joinAlias = null;
+					JoinType tempJoinType = copyJoinType(joinType);
+					Condition on = null;
+	
+					if (!fieldJoins.isEmpty()) {
+						for (FieldJoin fj : fieldJoins) {
+							if (f.getName().equals(fj.getField()) && (
+									j == 0
+											|| fj.getSourceField() == null
+											|| fields.get(j - 1).getName().equals(fj.getSourceField())
+							)
+							) {
+								fieldJoin = fj;
+								break;
+							}
 						}
 					}
+	
+					if (fieldJoin != null) {
+						tempJoinType = fieldJoin.getType();
+						joinAlias = fieldJoin.getAlias();
+						on = fieldJoin.getOn();
+					}
+	
+					if (j == 0) {
+						join = getJoin(from, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder);
+					} else if (j < fields.size() - 1) {
+						join = getJoin(join, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder);
+					} else {
+						fieldType = f.getType();
+						fieldName = f.getName();
+					}
+					
+					lastFieldName = f.getName();
+					j++;
 				}
-
-				if (fieldJoin != null) {
-					tempJoinType = fieldJoin.getType();
-					joinAlias = fieldJoin.getAlias();
-					on = fieldJoin.getOn();
-				}
-
-				if (j == 0) {
-					join = getJoin(from, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder);
-				} else if (j < fields.size() - 1) {
-					join = getJoin(join, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder);
-				} else {
-					fieldType = f.getType();
-					fieldName = f.getName();
-				}
-				
-				lastFieldName = f.getName();
-				j++;
+			} else {
+				fieldType = fields.get(0).getType();
+				fieldName = fields.get(0).getName();
 			}
-		} else {
-			fieldType = fields.get(0).getType();
-			fieldName = fields.get(0).getName();
+	
+			Expression expression = join != null ? join.get(fieldName) : from.get(fieldName);
+	
+			return new FieldExpression(expression, fieldType, fieldName);
 		}
-
-		Expression expression = join != null ? join.get(fieldName) : from.get(fieldName);
-
-		return new FieldExpression(expression, fieldType, fieldName);
 	}
 
 	private JoinType copyJoinType(JoinType joinType) {

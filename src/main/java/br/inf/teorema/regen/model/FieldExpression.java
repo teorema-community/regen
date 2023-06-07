@@ -1,5 +1,8 @@
 package br.inf.teorema.regen.model;
 
+import java.lang.reflect.Method;
+
+import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Expression;
 
 public class FieldExpression {
@@ -7,6 +10,7 @@ public class FieldExpression {
     private Expression expression;
     private Class<?> fieldType;
     private String fieldName;
+    private Function function;
 
     public FieldExpression() {}
 
@@ -16,7 +20,17 @@ public class FieldExpression {
         this.fieldName = fieldName;
     }
 
-    public Expression getExpression() {
+    public FieldExpression(Function function) {
+		super();
+		this.function = function;
+		
+		if (function != null) {
+			this.expression = function.getExpression();
+			this.fieldType = function.getExpression().getClass();
+		}
+	}
+
+	public Expression getExpression() {
         return expression;
     }
 
@@ -39,5 +53,17 @@ public class FieldExpression {
     public void setFieldName(String fieldName) {
         this.fieldName = fieldName;
     }
+
+	public Function getFunction() {
+		return function;
+	}
+
+	public void setFunction(Function function) {
+		this.function = function;
+	}
+	
+	public boolean isFunction() {
+		return function != null;
+	}
 
 }
