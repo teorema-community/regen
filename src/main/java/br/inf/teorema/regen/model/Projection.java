@@ -37,7 +37,7 @@ public class Projection<N> {
 		
 		if (this.name.contains("(") && this.name.contains(")")) {
 			String funStr = name.substring(0, name.indexOf("("));
-			this.function = FunctionType.valueOf(funStr.toUpperCase());
+			this.function = FunctionType.getByMethodName(funStr.toUpperCase(), true);
 			this.name = name.substring(name.indexOf("(") + 1, name.lastIndexOf(")"));
 			this.parameters = extractParameters(name);
 		}
