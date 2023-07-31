@@ -75,7 +75,16 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
         List<Tuple> tuples = paginate(tupleQuery, pageable);
         List<Map<String, Object>> entities = parseResultList(tuples, projectionList, clazz);
 
-        return new PageImpl<Map<String, Object>>(entities, new PageRequest(pageable.getPageNumber(), pageable.getPageSize()), count);
+		PageRequest pageRequest = null;
+
+		if (pageable == null) {
+			Integer listSize = Math.max(1, entities.size());
+			pageRequest = new PageRequest(0, listSize);
+		} else {
+			pageRequest = new PageRequest(pageable.getPageNumber(), pageable.getPageSize());
+		}
+
+        return new PageImpl<Map<String, Object>>(entities, pageRequest, count);
     }
     
     @Override
