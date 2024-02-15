@@ -34,7 +34,7 @@ public enum FunctionType {
 	public static FunctionType getByMethodName(String name, boolean throwExceptionIfNotFound) {
 		if (name != null && !name.isEmpty()) {
 			for (FunctionType type : values()) {
-				if (name.equals(type.getMethodName())) {
+				if (name.equalsIgnoreCase(type.getMethodName())) {
 					return type;
 				}
 			}
