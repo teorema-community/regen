@@ -33,6 +33,8 @@ import java.util.Map;
 
 @Service
 public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepository<T> {
+	
+	private static final String JOIN_PATH_SEPARATOR = "_";
 
     private EntityManager entityManager = null;
 
@@ -178,11 +180,12 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
         return tupleQuery;
     }
     
-    public <T> List<Projection> createProjections(CriteriaBuilder criteriaBuilder, Root<T> root, List<String> projections, Class<T> clazz, Map<String, Join<?, ?>> joins) throws NoSuchFieldException {
+    @SuppressWarnings("rawtypes")
+	public <T> List<Projection> createProjections(CriteriaBuilder criteriaBuilder, Root<T> root, List<String> projections, Class<T> clazz, Map<String, Join<?, ?>> joins) throws NoSuchFieldException {
         List<Projection> list = new ArrayList<>();
 
         for (String p : projections) {
-            Projection projection = new Projection(p);
+            Projection<?> projection = new Projection(p);
             
             if (projection.hasFunction()) {
             	List<Projection> subProjections = createProjections(criteriaBuilder, root, projection.getParameters(), clazz, joins);
@@ -200,29 +203,22 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
 	                }
 	            } else {
 	                Join<?, ?> join = null;
-	                int i = 0;
-	                for (Field field : fields) {
+	                StringBuilder path = new StringBuilder("");
+	                
+	                for (int i = 0; i < fields.size(); i++) {
+	                	Field field = fields.get(i);
 	                    String fieldName = field.getName();
 	
-	                    if (i == 0) {
-	                        if (joins.containsKey(fieldName)) {
-	                            join = joins.get(fieldName);
-	                        } else {
-	                            join = root.join(fieldName, JoinType.LEFT);
-	                            joins.put(fieldName, join);
-	                        }
-	                    } else if (i < fields.size() - 1) {
-	                        if (joins.containsKey(fieldName)) {
-	                            join = joins.get(fieldName);
-	                        } else {
-	                            join = join.join(fieldName, JoinType.LEFT);
-	                            joins.put(fieldName, join);
-	                        }
+	                    if (i < fields.size() - 1) {
+	                    	if (path.length() > 0) {
+	                    		path.append(JOIN_PATH_SEPARATOR);
+	                    	}
+	                    	
+	                    	path.append(fieldName);
+	                        join = getJoin(joins, path.toString(), fieldName, join != null ? join : root);
 	                    } else {
-	                    	projection.setExpression(join.get(fieldName));
+	                    	projection.setExpression(join.get(path.toString()));
 	                    }
-	
-	                    i++;
 	                }
 	            }
             }
@@ -231,6 +227,19 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
         }
 
         return list;
+    }
+    
+    private Join<?, ?> getJoin(Map<String, Join<?, ?>> joins, String path, String fieldName, From<?, ?> from) {
+    	Join<?, ?> join = null;
+    	
+    	if (joins.containsKey(path)) {
+            join = joins.get(fieldName);
+        } else {
+            join = from.join(fieldName, JoinType.LEFT);
+            joins.put(path, join);
+        }
+    	
+    	return join;
     }
 
     public List<Map<String, Object>> parseResultList(List<Tuple> tuples, List<Projection> projectionList, Class<T> clazz) throws NoSuchFieldException {
