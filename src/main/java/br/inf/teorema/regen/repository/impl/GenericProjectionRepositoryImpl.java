@@ -217,7 +217,7 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
 	                    	path.append(fieldName);
 	                        join = getJoin(joins, path.toString(), fieldName, join != null ? join : root);
 	                    } else {
-	                    	projection.setExpression(join.get(path.toString()));
+	                    	projection.setExpression(join.get(fieldName));
 	                    }
 	                }
 	            }
