@@ -40,7 +40,9 @@ public class GenericSpecification<T> implements Specification<T> {
 			query = setOrderBy(root, query, criteriaBuilder);
 			query = setHaving(root, query, criteriaBuilder);
 
-			return addCondition(this.condition, LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
+			return addCondition(
+				this.condition, LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder, this.clazz
+			).get(0);
 		} catch (NoSuchFieldException | ParseException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
 			e.printStackTrace();
 			throw new NullPointerException(e.getClass().getName() + ": " + e.getMessage());
@@ -48,14 +50,16 @@ public class GenericSpecification<T> implements Specification<T> {
 	}
 
 	private List<Predicate> addCondition(
-			Condition condition, LogicalOperator logicalOperator, List<Predicate> predicates, boolean last, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
+		Condition condition, LogicalOperator logicalOperator, List<Predicate> predicates, boolean last, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder, Class<?> clazz
 	) throws NoSuchFieldException, ParseException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
 		if (!condition.getConditions().isEmpty()) {
 			List<Predicate> tempPredicates = new ArrayList<>();
 
 			int i = 0;
 			for (Condition subCondition : condition.getConditions()) {
-				tempPredicates = addCondition(subCondition, condition.getLogicalOperator(), tempPredicates, i >= condition.getConditions().size() - 1, from, query, criteriaBuilder);
+				tempPredicates = addCondition(
+					subCondition, condition.getLogicalOperator(), tempPredicates, i >= condition.getConditions().size() - 1, from, query, criteriaBuilder, clazz
+				);
 				i++;
 			}
 
@@ -78,14 +82,14 @@ public class GenericSpecification<T> implements Specification<T> {
 					|| condition.getConditionalOperator().equals(ConditionalOperator.IS_NULL)
 				)
 		) {
-			FieldExpression fieldExpression = getFieldExpressionByCondition(condition, from, query, criteriaBuilder);
+			FieldExpression fieldExpression = getFieldExpressionByCondition(condition, from, query, criteriaBuilder, clazz);
 			Object value = condition.getValue();
 			boolean isValueExpression = false;
 
 			if (condition.getExpressionValue() != null) {
 				isValueExpression = true;
 				value = this.getFieldExpressionByField(
-					condition.getExpressionValue(), condition.getJoinType(), condition.getFieldJoins(), from, query, criteriaBuilder
+					condition.getExpressionValue(), condition.getJoinType(), condition.getFieldJoins(), from, query, criteriaBuilder, clazz
 				).getExpression();
 			}
 
@@ -282,8 +286,22 @@ public class GenericSpecification<T> implements Specification<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private FieldExpression getFieldExpressionByCondition(Condition condition, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, ParseException, InvocationTargetException {
-		FieldExpression fieldExpression = this.getFieldExpressionByField(condition.getField(), condition.getJoinType(), condition.getFieldJoins(), from, query, criteriaBuilder);
+	private FieldExpression getFieldExpressionByCondition(
+		Condition condition, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder, Class<?> clazz
+	) throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, ParseException, InvocationTargetException {
+		System.out.println();
+		System.out.println("Entrou no método getFieldExpressionByCondition");
+		System.out.println("condition: " + condition);
+		System.out.println("from: " + from);
+		System.out.println("condition.getField(): " + condition.getField());
+		System.out.println("condition.getJoinType(): " + condition.getJoinType());
+		System.out.println("condition.getFieldJoins(): " + condition.getFieldJoins());
+		
+		FieldExpression fieldExpression = this.getFieldExpressionByField(
+			condition.getField(), condition.getJoinType(), condition.getFieldJoins(), from, query, criteriaBuilder, clazz
+		);
+		
+		System.out.println("fieldExpression: " + fieldExpression);
 
 		if (Arrays.asList(new ConditionalOperator[] {
 				ConditionalOperator.LIKE, ConditionalOperator.LIKE_START, 
@@ -297,65 +315,104 @@ public class GenericSpecification<T> implements Specification<T> {
 
 	@SuppressWarnings("rawtypes")
 	public FieldExpression getFieldExpressionByField(
-		String field, JoinType joinType, List<FieldJoin> fieldJoins, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
+		String field, JoinType joinType, List<FieldJoin> fieldJoins, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder, Class<?> clazz
 	) throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ParseException {
+		System.out.println("");
+		System.out.println("Entrou em getFieldExpressionByField");
+		System.out.println("field: " + field);
+		System.out.println("joinType: " + joinType);
+		System.out.println("fieldJoins: " + fieldJoins);
+		System.out.println("from: " + from);
+		
 		Join<?, ?> join = null;
 		Class<?> fieldType = null;
 		String fieldName = null;
 		String lastFieldName = null;
-		Function function = Function.extractFunctionFromfield(field, this, joinType, fieldJoins, from, query, criteriaBuilder);
+		Function function = Function.extractFunctionFromfield(field, this, joinType, fieldJoins, from, query, criteriaBuilder, clazz);
+		
+		System.out.println("function: " + function);
 		
 		if (function != null) {
 			return new FieldExpression(function);
 		} else {
 			List<Field> fields = ReflectionUtils.getFields(field, clazz);
+			System.out.println("fields: " + fields);
+			System.out.println("fields.size(): " + fields.size());
 	
 			if (fields.size() > 1) {
 				int j = 0;
 				for (Field f : fields) {
+					System.out.println("f: " + f);
+					System.out.println("f.getName(): " + f.getName());
+					
 					FieldJoin fieldJoin = null;
 					String joinAlias = null;
 					JoinType tempJoinType = copyJoinType(joinType);
+					System.out.println("tempJoinType: " + tempJoinType);
 					Condition on = null;
 	
 					if (!fieldJoins.isEmpty()) {
+						System.out.println("Entrou no if 1");
+						
 						for (FieldJoin fj : fieldJoins) {
+							System.out.println("fj: " + fj);
+							System.out.println("fj.getField(): " + fj.getField());
+							System.out.println("j: " + j);
+							System.out.println("fj.getSourceField(): " + fj.getSourceField());
+							
 							if (f.getName().equals(fj.getField()) && (
 									j == 0
 											|| fj.getSourceField() == null
 											|| fields.get(j - 1).getName().equals(fj.getSourceField())
 							)
 							) {
+								System.out.println("Entrou no if 2");
 								fieldJoin = fj;
 								break;
 							}
 						}
 					}
+					
+					System.out.println("fieldJoin: " + fieldJoin);
 	
 					if (fieldJoin != null) {
+						System.out.println("Entrou no if 3");
 						tempJoinType = fieldJoin.getType();
 						joinAlias = fieldJoin.getAlias();
 						on = fieldJoin.getOn();
 					}
+					
+					System.out.println("tempJoinType: " + tempJoinType);
+					System.out.println("joinAlias: " + joinAlias);
+					System.out.println("on: " + on);
+					System.out.println("j: " + j);
+					fieldType = ReflectionUtils.getFieldEntityOrType(f);
 	
 					if (j == 0) {
-						join = getJoin(from, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder);
+						join = getJoin(from, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder, fieldType);
 					} else if (j < fields.size() - 1) {
-						join = getJoin(join, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder);
+						join = getJoin(join, lastFieldName, f.getName(), tempJoinType, joinAlias, on, query, criteriaBuilder, fieldType);
 					} else {
-						fieldType = f.getType();
 						fieldName = f.getName();
 					}
 					
+					System.out.println("fieldType: " + fieldType);
+					System.out.println("fieldName: " + fieldName);
+					
 					lastFieldName = f.getName();
+					System.out.println("lastFieldName: " + lastFieldName);
 					j++;
 				}
 			} else {
 				fieldType = fields.get(0).getType();
 				fieldName = fields.get(0).getName();
 			}
+			
+			System.out.println("join: " + join);
+			System.out.println("fieldName: " + fieldName);
 	
 			Expression expression = join != null ? join.get(fieldName) : from.get(fieldName);
+			System.out.println("expression: " + expression);
 	
 			return new FieldExpression(expression, fieldType, fieldName);
 		}
@@ -379,8 +436,17 @@ public class GenericSpecification<T> implements Specification<T> {
 	}
 
 	private Join<?, ?> getJoin(
-		From<?, ?> from, String sourceField, String field, JoinType joinType, String alias, Condition on, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
-	) throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ParseException {		
+		From<?, ?> from, String sourceField, String field, JoinType joinType, String alias, Condition on, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder, Class<?> clazz
+	) throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ParseException {
+		System.out.println("Entrou em getJoin");
+		System.out.println("from: " + from);
+		System.out.println("sourceField: " + sourceField);
+		System.out.println("field: " + field);
+		System.out.println("joinType: " + joinType);
+		System.out.println("alias: " + alias);
+		System.out.println("on: " + on);
+		System.out.println("this.joins: " + this.joins);
+		
 		Optional<FieldJoin> optional = this.joins.stream()
 			.filter(fj -> fj.getJoin() != null && (
 				(sourceField != null && sourceField.equals(fj.getSourceField()))
@@ -391,22 +457,32 @@ public class GenericSpecification<T> implements Specification<T> {
 			) && field.equals(fj.getField()) && joinType.equals(fj.getType()))
 			.findFirst();
 		
+		System.out.println("optional.isPresent(): " + optional.isPresent());
+		
 		if (optional.isPresent()) {
+			System.out.println("optional.get(): " + optional.get());
+			System.out.println("optional.get().getJoin(): " + optional.get().getJoin());
 			return optional.get().getJoin();
 		} else {
 			Join<?, ?> join = from.join(field, joinType);
+			System.out.println("join: " + join);
 			
 			if (on != null) {
 				List<Predicate> predicates = addCondition(
-					on, LogicalOperator.AND, new ArrayList<Predicate>(), true, join, query, criteriaBuilder
+					on, LogicalOperator.AND, new ArrayList<Predicate>(), true, join, query, criteriaBuilder, clazz
 				);
+				
+				System.out.println("predicates: " + predicates);
 				
 				if (predicates != null && !predicates.isEmpty()) {
 					join.on(predicates.toArray(new Predicate[predicates.size()]));
 				}
 			}
 			
-			this.joins.add(new FieldJoin(sourceField, field, joinType, alias, on, join));
+			FieldJoin newFieldJoin = new FieldJoin(sourceField, field, joinType, alias, on, join);
+			System.out.println("newFieldJoin: " + newFieldJoin);
+			this.joins.add(newFieldJoin);
+			System.out.println("this.joins: " + this.joins);
 			
 			return join;
 		}
@@ -418,7 +494,7 @@ public class GenericSpecification<T> implements Specification<T> {
 
 			for (String groupBy : condition.getGroupBy()) {
 				expressions.add(this.getFieldExpressionByField(
-					groupBy, JoinType.INNER, condition.getFieldJoins(), root, query, criteriaBuilder
+					groupBy, JoinType.INNER, condition.getFieldJoins(), root, query, criteriaBuilder, this.clazz
 				).getExpression());
 			}
 
@@ -439,7 +515,9 @@ public class GenericSpecification<T> implements Specification<T> {
 					List<Expression<?>> expressions = new ArrayList<>();
 
 					if (orderBy.getCondition().getField() != null && !orderBy.getCondition().getField().isEmpty()) {
-						expressions.add(this.getFieldExpressionByCondition(orderBy.getCondition(), root, query, criteriaBuilder).getExpression());
+						expressions.add(this.getFieldExpressionByCondition(
+							orderBy.getCondition(), root, query, criteriaBuilder, this.clazz
+						).getExpression());
 					}
 
 					for (Case cas : orderBy.getCondition().getCases()) {
@@ -447,11 +525,13 @@ public class GenericSpecification<T> implements Specification<T> {
 
 						for (WhenThen whenThen : cas.getWhenThens()) {
 							if (whenThen.getWhen() != null) {
-								Predicate whenPredicate = this.addCondition(whenThen.getWhen(), LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder).get(0);
+								Predicate whenPredicate = this.addCondition(
+									whenThen.getWhen(), LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder, this.clazz
+								).get(0);
 
 								if (whenThen.getExpressionThen() != null && !whenThen.getExpressionThen().isEmpty()) {
 									cbCase.when(whenPredicate, this.getFieldExpressionByField(
-										whenThen.getExpressionThen(), JoinType.INNER, condition.getFieldJoins(), root, query, criteriaBuilder
+										whenThen.getExpressionThen(), JoinType.INNER, condition.getFieldJoins(), root, query, criteriaBuilder, this.clazz
 									).getExpression());
 								} else {
 									cbCase.when(whenPredicate, whenThen.getRawThen());
@@ -461,7 +541,7 @@ public class GenericSpecification<T> implements Specification<T> {
 
 						if (cas.getExpressionOtherwise() != null && !cas.getExpressionOtherwise().isEmpty()) {
 							cbCase.otherwise(this.getFieldExpressionByField(
-								cas.getExpressionOtherwise(), JoinType.INNER, condition.getFieldJoins(), root, query, criteriaBuilder
+								cas.getExpressionOtherwise(), JoinType.INNER, condition.getFieldJoins(), root, query, criteriaBuilder, this.clazz
 							).getExpression());
 						} else {
 							cbCase.otherwise(cas.getRawOtherwise());
@@ -492,7 +572,9 @@ public class GenericSpecification<T> implements Specification<T> {
 	private CriteriaQuery<?> setHaving(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
 		if (condition.getHaving() != null) {
 			//FieldExpression fieldExpression = getFieldExpressionByCondition(condition.getHaving(), root, query, criteriaBuilder);
-			List<Predicate> havingPredicates = addCondition(condition.getHaving(), LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder);
+			List<Predicate> havingPredicates = addCondition(
+				condition.getHaving(), LogicalOperator.AND, new ArrayList<Predicate>(), true, root, query, criteriaBuilder, this.clazz
+			);
 			query.having(havingPredicates.toArray(new Predicate[havingPredicates.size()]));
 			/*query.having(criteriaBuilder.lessThanOrEqualTo(				
 				criteriaBuilder.sum(criteriaBuilder.diff(root.join("balances").get("entries"), root.join("balances").get("exits"))),

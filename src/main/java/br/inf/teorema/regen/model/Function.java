@@ -34,7 +34,7 @@ public class Function {
 	}
 	
 	private List<Expression> createExpression(
-		GenericSpecification<?> genericSpecification, JoinType joinType, List<FieldJoin> fieldJoins, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
+		GenericSpecification<?> genericSpecification, JoinType joinType, List<FieldJoin> fieldJoins, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder, Class<?> clazz
 	) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, NoSuchFieldException, ParseException {
 		List<Expression> subExpressions = new ArrayList<>();
 		
@@ -42,7 +42,9 @@ public class Function {
 			if (getSubFunctions().isEmpty()) {
 				if (getContent() != null && !getContent().isEmpty()) {
 					subExpressions.add(
-						genericSpecification.getFieldExpressionByField(getContent(), joinType, fieldJoins, from, query, criteriaBuilder).getExpression()
+						genericSpecification.getFieldExpressionByField(
+							getContent(), joinType, fieldJoins, from, query, criteriaBuilder, clazz
+						).getExpression()
 					);
 				}
 			} else {
@@ -70,7 +72,7 @@ public class Function {
 	}
 
 	public static Function extractFunctionFromfield(
-		String field, GenericSpecification<?> genericSpecification, JoinType joinType, List<FieldJoin> fieldJoins, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder
+		String field, GenericSpecification<?> genericSpecification, JoinType joinType, List<FieldJoin> fieldJoins, From<?, ?> from, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder, Class<?> clazz
 	) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, NoSuchFieldException, ParseException {		
 		if (field != null && !field.isEmpty()) {			
 			int startIndex = field.indexOf("(");
@@ -91,7 +93,7 @@ public class Function {
 					String[] fields = temp.split(",");
 					
 					for (String f : fields) {
-						Function subFunction = extractFunctionFromfield(f, genericSpecification, joinType, fieldJoins, from, query, criteriaBuilder);
+						Function subFunction = extractFunctionFromfield(f, genericSpecification, joinType, fieldJoins, from, query, criteriaBuilder, clazz);
 						
 						if (subFunction != null) {
 							function.getSubFunctions().add(subFunction);
@@ -101,7 +103,7 @@ public class Function {
 					}
 				}
 				
-				function.createExpression(genericSpecification, joinType, fieldJoins, from, query, criteriaBuilder);
+				function.createExpression(genericSpecification, joinType, fieldJoins, from, query, criteriaBuilder, clazz);
 				return function;
 			}
 		}

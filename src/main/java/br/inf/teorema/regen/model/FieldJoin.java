@@ -112,5 +112,11 @@ public class FieldJoin {
 	public void setOn(Condition on) {
 		this.on = on;
 	}
+
+	@Override
+	public String toString() {
+		return "FieldJoin [sourceField=" + sourceField + ", field=" + field + ", type=" + type + ", alias=" + alias
+				+ ", on=" + on + "]";
+	}
 	
 }
