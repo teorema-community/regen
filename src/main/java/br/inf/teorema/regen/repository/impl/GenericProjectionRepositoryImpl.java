@@ -233,7 +233,7 @@ public class GenericProjectionRepositoryImpl<T> implements GenericProjectionRepo
     	Join<?, ?> join = null;
     	
     	if (joins.containsKey(path)) {
-            join = joins.get(fieldName);
+            join = joins.get(path);
         } else {
             join = from.join(fieldName, JoinType.LEFT);
             joins.put(path, join);
